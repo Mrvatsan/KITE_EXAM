@@ -1,0 +1,22 @@
+# Core Django
+Django==5.2.9
+djangorestframework==3.16.1
+django-cors-headers==4.9.0
+
+# Database
+psycopg2-binary==2.9.10
+dj-database-url==2.2.0
+
+# WSGI Server
+gunicorn==23.0.0
+
+# Static Files
+whitenoise==6.8.2
+
+# Utilities
+python-dotenv==1.2.1
+openpyxl==3.1.5
+pandas==2.3.3
+numpy==2.2.6
+PyPDF2==3.0.1
+requests==2.32.5
