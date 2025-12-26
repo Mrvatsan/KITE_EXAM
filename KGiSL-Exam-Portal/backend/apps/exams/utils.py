@@ -11,7 +11,7 @@ def clean_and_parse_excel(file_obj):
     import xlrd
     from io import BytesIO
     
-    logging.basicConfig(filename='d:/adminstudent/debug.log', level=logging.DEBUG, 
+    logging.basicConfig(filename='debug.log', level=logging.DEBUG, 
                        format='%(asctime)s - %(message)s')
     
     df = None
