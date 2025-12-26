@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'export',  // Enable static HTML export
-  distDir: 'out',    // Output directory for static build
+  /* output: 'export' removed for Render Web Service deployment */
+  /* distDir: 'out' removed */
   images: {
-    unoptimized: true  // Required for static export
+    /* unoptimized: true removed (unless you really want it, but usually not needed for web service) */
   },
   env: {
     // Production API URL - update this for Render deployment
