@@ -73,16 +73,13 @@ export default function AdminDashboard() {
     };
 
     return (
-        <div className="min-h-screen bg-transparent flex flex-col relative overflow-hidden">
-            {/* Background Image */}
-            <div className="absolute inset-0 bg-cover bg-center z-0" style={{ backgroundImage: 'url("/bg.jpg")' }}></div>
-            <div className="absolute inset-0 bg-black/30 z-0"></div>
+        <div className="min-h-screen bg-gray-100 flex flex-col">
             {/* Navbar */}
             <div className="bg-gray-900 text-white px-6 py-4 flex justify-between items-center shadow-md">
                 <h1 className="text-xl font-bold tracking-wider">EXAM MANAGEMENT SYSTEM</h1>
                 <div className="flex items-center gap-4">
-                    <span className="bg-gray-700 px-3 py-1 rounded text-sm">End Semester Exam</span>
-                    <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 px-4 py-1 rounded text-sm font-bold transition">Logout</button>
+                    <span className="bg-gray-700 px-3 py-1 rounded text-sm font-medium">End Semester Exam</span>
+                    <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 px-4 py-1 rounded text-sm font-bold transition shadow-lg">Logout</button>
                 </div>
             </div>
 
@@ -91,7 +88,7 @@ export default function AdminDashboard() {
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-lg text-center"
+                    className="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-lg text-center border border-gray-200"
                 >
                     <h2 className="text-2xl font-bold text-gray-800 mb-8">Admin Controls</h2>
 
@@ -107,7 +104,7 @@ export default function AdminDashboard() {
                             {latestDataset && (
                                 <button
                                     onClick={() => handleToggle(latestDataset.id)}
-                                    className={`px-4 py-1 rounded text-white text-sm font-bold transition ${latestDataset.is_active ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
+                                    className={`px-4 py-1 rounded text-white text-sm font-bold transition ${latestDataset.is_active ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600 shadow-md'}`}
                                 >
                                     Toggle
                                 </button>
@@ -123,13 +120,12 @@ export default function AdminDashboard() {
                             </div>
                             <input type="file" className="hidden" onChange={handleUpload} accept=".xls,.xlsx" />
                         </label>
-                        {loading && <p className="text-sm text-blue-600 animate-pulse">{msg}</p>}
+                        {loading && <p className="text-sm text-blue-600 animate-pulse font-medium">{msg}</p>}
 
                         <button onClick={handleRefresh} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center gap-2 transition transform hover:-translate-y-1">
                             <span>🔄 Refresh Seating Plans</span>
                         </button>
                     </div>
-
                 </motion.div>
             </div>
         </div>
