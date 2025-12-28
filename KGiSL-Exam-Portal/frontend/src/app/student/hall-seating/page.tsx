@@ -68,10 +68,10 @@ export default function HallSeatingPage() {
     const floor = getFloorFromHallNo(student.hall_no, block);
 
     return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 relative">
-            {/* Background Image Placeholder */}
-            <div className="absolute inset-0 bg-cover bg-center z-0" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80")' }}></div>
-            <div className="absolute inset-0 bg-white/90 z-0"></div>
+        <div className="min-h-screen bg-transparent flex items-center justify-center p-4 relative">
+            {/* Background Image */}
+            <div className="absolute inset-0 bg-cover bg-center z-0" style={{ backgroundImage: 'url("/bg.jpg")' }}></div>
+            <div className="absolute inset-0 bg-black/30 z-0"></div>
 
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}

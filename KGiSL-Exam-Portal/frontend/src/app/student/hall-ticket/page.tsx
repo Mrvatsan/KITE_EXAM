@@ -118,7 +118,7 @@ const ContentFrame = ({ children }: { children: React.ReactNode }) => (
                     alt="KITE Watermark"
                     width={500}
                     height={300}
-                    className="opacity-[0.50] w-[500px]"
+                    className="opacity-[0.08] w-[500px]"
                     style={{ objectFit: 'contain' }}
                 />
             </div>

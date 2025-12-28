@@ -49,9 +49,10 @@ export default function StudentLandingPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 flex items-center justify-center p-4 relative">
+        <div className="min-h-screen bg-transparent flex items-center justify-center p-4 relative">
             {/* Background Image */}
-            <div className="absolute inset-0 bg-cover bg-center z-0 opacity-20" style={{ backgroundImage: 'url("/bg.jpg")' }}></div>
+            <div className="absolute inset-0 bg-cover bg-center z-0" style={{ backgroundImage: 'url("/bg.jpg")' }}></div>
+            <div className="absolute inset-0 bg-black/30 z-0"></div>
 
             <div className="w-full max-w-6xl z-10">
                 {/* Header */}

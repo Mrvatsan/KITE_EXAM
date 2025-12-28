@@ -73,7 +73,10 @@ export default function AdminDashboard() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-transparent flex flex-col relative overflow-hidden">
+            {/* Background Image */}
+            <div className="absolute inset-0 bg-cover bg-center z-0" style={{ backgroundImage: 'url("/bg.jpg")' }}></div>
+            <div className="absolute inset-0 bg-black/30 z-0"></div>
             {/* Navbar */}
             <div className="bg-gray-900 text-white px-6 py-4 flex justify-between items-center shadow-md">
                 <h1 className="text-xl font-bold tracking-wider">EXAM MANAGEMENT SYSTEM</h1>
