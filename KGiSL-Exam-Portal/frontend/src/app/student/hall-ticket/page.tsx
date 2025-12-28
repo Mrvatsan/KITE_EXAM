@@ -118,7 +118,7 @@ const ContentFrame = ({ children }: { children: React.ReactNode }) => (
                     alt="KITE Watermark"
                     width={500}
                     height={300}
-                    className="opacity-[0.08] w-[500px]"
+                    className="opacity-[0.30] w-[500px]"
                     style={{ objectFit: 'contain' }}
                 />
             </div>
@@ -328,7 +328,7 @@ export default function HallTicketPage() {
                         {/* ---------------- PAGE 2 ---------------- */}
                         <A4Page>
                             <ContentFrame>
-                                <div className="flex-1 flex flex-col p-4">
+                                <div className="flex-1 flex flex-col p-4 bg-white/80">
                                     <h2 className="text-center text-lg font-bold underline mb-6 uppercase tracking-wide">
                                         INSTRUCTIONS TO THE CANDIDATE
                                     </h2>
