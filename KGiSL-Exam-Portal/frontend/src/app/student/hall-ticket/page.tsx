@@ -45,6 +45,7 @@ export default function HallTicketPage() {
     const [hallTicketData, setHallTicketData] = useState<HallTicketData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [isDownloaded, setIsDownloaded] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -75,6 +76,7 @@ export default function HallTicketPage() {
 
     const handlePrint = () => {
         window.print();
+        setIsDownloaded(true);
     };
 
     const handleBack = () => {
@@ -117,7 +119,7 @@ export default function HallTicketPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 p-4">
+        <div className="min-h-screen bg-gray-100 p-4 print:bg-white print:p-0">
             {/* Print/Back Buttons - Hidden in print */}
             <div className="max-w-5xl mx-auto mb-4 flex justify-between print:hidden">
                 <button
@@ -128,163 +130,199 @@ export default function HallTicketPage() {
                 </button>
                 <button
                     onClick={handlePrint}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-lg"
+                    disabled={isDownloaded}
+                    className={`${isDownloaded
+                            ? 'bg-green-600 cursor-not-allowed opacity-80'
+                            : 'bg-indigo-600 hover:bg-indigo-700'
+                        } text-white px-6 py-3 rounded-lg font-bold transition shadow-lg flex items-center gap-2`}
                 >
-                    🖨️ Print Hall Ticket
+                    {isDownloaded ? (
+                        <>
+                            <span>✅</span> Downloaded
+                        </>
+                    ) : (
+                        <>
+                            <span>🖨️</span> Download
+                        </>
+                    )}
                 </button>
             </div>
 
             {/* Hall Ticket Content */}
             {hallTicketData && Object.keys(hallTicketData.semesters).map((semester) => (
-                <motion.div
-                    key={semester}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="max-w-5xl mx-auto bg-white shadow-2xl rounded-lg overflow-hidden mb-8 print:shadow-none print:mb-12 print:break-after-page relative"
-                >
-                    {/* Watermark Logo */}
-                    <div className="absolute inset-0 flex items-start justify-center pointer-events-none z-0 pt-[28rem]">
-                        <Image
-                            src="/kite-watermark.png"
-                            alt="KITE Watermark"
-                            width={500}
-                            height={300}
-                            className="opacity-75"
-                            style={{ objectFit: 'contain' }}
-                        />
-                    </div>
+                <div key={semester}> {/* Wrapper for Page 1 and Page 2 per semester if needed, though usually just one */}
 
-                    {/* Header */}
-                    <div className="border-4 border-blue-900 p-6 relative z-10">
-                        {/* Top section with logo, institute name, and NAAC badge */}
-                        <div className="flex items-start justify-between gap-6 pb-4 mb-4">
-                            {/* KITE Logo - Top Left */}
-                            <div className="flex-shrink-0 w-48">
-                                <Image
-                                    src="/kite-logo.png"
-                                    alt="KITE Logo"
-                                    width={180}
-                                    height={180}
-                                    className="object-contain"
-                                    priority
-                                />
-                            </div>
+                    {/* Page 1: Hall Ticket Details */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="max-w-5xl mx-auto bg-white shadow-2xl rounded-lg overflow-hidden mb-8 print:shadow-none print:mb-0 print:rounded-none relative print:h-screen print:flex print:flex-col"
+                    >
+                        {/* Watermark Logo - Positioned to center of content area (approx) */}
+                        <div className="absolute inset-x-0 top-[28rem] flex justify-center pointer-events-none z-0 print:fixed print:top-[30%] print:left-0 print:w-full">
+                            <Image
+                                src="/kite-watermark.png"
+                                alt="KITE Watermark"
+                                width={500}
+                                height={300}
+                                className="opacity-75"
+                                style={{ objectFit: 'contain' }}
+                            />
+                        </div>
 
-                            {/* Institute Information - Center */}
-                            <div className="flex-1 text-center">
-                                <h1 className="text-2xl font-bold text-blue-900 mb-1" style={{ fontStyle: 'italic' }}>
-                                    KGiSL Institute of Technology
-                                </h1>
-                                <p className="text-xs text-gray-700 leading-relaxed">
-                                    Affiliated to Anna University, Approved by AICTE, Recognised by UGC,
-                                </p>
-                                <p className="text-xs text-gray-700">
-                                    Accredited by NAAC & NBA
-                                </p>
-                                <p className="text-xs text-gray-700 mt-1">
-                                    365, KGiSL Campus, Thudiyalur Road, Saravanampatti, Coimbatore-641035
-                                </p>
-                                <div className="mt-3 pt-3 border-t border-gray-300">
-                                    <h2 className="text-sm font-bold text-black tracking-wide">
-                                        OFFICE OF THE CONTROLLER OF EXAMINATIONS
-                                    </h2>
+                        {/* Main Content Container */}
+                        <div className="border-4 border-blue-900 p-6 relative z-10 m-4 print:m-0 print:border-2 print:flex-1 print:flex print:flex-col">
+                            {/* Top section with logo, institute name, and NAAC badge */}
+                            <div className="flex items-start justify-between gap-6 pb-4 mb-4">
+                                {/* KITE Logo - Top Left */}
+                                <div className="flex-shrink-0 w-48">
+                                    <Image
+                                        src="/kite-logo.png"
+                                        alt="KITE Logo"
+                                        width={180}
+                                        height={180}
+                                        className="object-contain"
+                                        priority
+                                    />
+                                </div>
+
+                                {/* Institute Information - Center */}
+                                <div className="flex-1 text-center">
+                                    <h1 className="text-2xl font-bold text-blue-900 mb-1" style={{ fontStyle: 'italic' }}>
+                                        KGiSL Institute of Technology
+                                    </h1>
+                                    <p className="text-xs text-gray-700 leading-relaxed">
+                                        Affiliated to Anna University, Approved by AICTE, Recognised by UGC,
+                                    </p>
+                                    <p className="text-xs text-gray-700">
+                                        Accredited by NAAC & NBA
+                                    </p>
+                                    <p className="text-xs text-gray-700 mt-1">
+                                        365, KGiSL Campus, Thudiyalur Road, Saravanampatti, Coimbatore-641035
+                                    </p>
+                                    <div className="mt-3 pt-3 border-t border-gray-300">
+                                        <h2 className="text-sm font-bold text-black tracking-wide">
+                                            OFFICE OF THE CONTROLLER OF EXAMINATIONS
+                                        </h2>
+                                    </div>
+                                </div>
+
+                                {/* NAAC Badge - Top Right */}
+                                <div className="flex-shrink-0 w-32">
+                                    <Image
+                                        src="/naac-badge-v2.png"
+                                        alt="NAAC Badge"
+                                        width={120}
+                                        height={120}
+                                        className="object-contain"
+                                        priority
+                                    />
                                 </div>
                             </div>
 
-                            {/* NAAC Badge - Top Right */}
-                            <div className="flex-shrink-0 w-32">
+                            <div className="text-center bg-blue-900 text-white py-2 mb-6 print:py-1">
+                                <h3 className="text-base font-semibold">
+                                    HALL TICKET FOR THE END SEMESTER EXAMINATIONS - NOV/DEC 2025
+                                </h3>
+                            </div>
+
+                            {/* Student Information */}
+                            <div className="grid grid-cols-2 gap-4 mb-6 text-sm print:mb-4">
+                                <div className="border border-gray-300 p-3 bg-white/70 print:p-2">
+                                    <span className="font-semibold block">NAME OF THE CANDIDATE:</span>
+                                    <p className="text-lg font-bold mt-1">{hallTicketData.student.name}</p>
+                                </div>
+                                <div className="border border-gray-300 p-3 bg-white/70 print:p-2">
+                                    <span className="font-semibold block">REGISTER NUMBER:</span>
+                                    <p className="text-lg font-bold mt-1">{hallTicketData.student.register_no}</p>
+                                </div>
+                                <div className="border border-gray-300 p-3 bg-white/70 print:p-2">
+                                    <span className="font-semibold block">DEPARTMENT:</span>
+                                    <p className="text-base font-bold mt-1 whitespace-pre-line leading-tight">
+                                        {getDepartmentFullName(hallTicketData.student.department)}
+                                    </p>
+                                </div>
+                                <div className="border border-gray-300 p-3 bg-white/70 print:p-2">
+                                    <span className="font-semibold block">SEMESTER:</span>
+                                    <p className="text-lg font-bold mt-1">{semester}</p>
+                                </div>
+                            </div>
+
+                            {/* Exam Schedule Table */}
+                            <div className="mb-6 relative z-10 print:mb-4">
+                                <table className="w-full border-collapse border-2 border-gray-800 bg-white/80">
+                                    <thead>
+                                        <tr className="bg-blue-900 text-white print:bg-gray-300 print:text-black">
+                                            <th className="border border-gray-600 p-3 text-left font-bold print:p-1">S.No</th>
+                                            <th className="border border-gray-600 p-3 text-left font-bold print:p-1">Course Code</th>
+                                            <th className="border border-gray-600 p-3 text-left font-bold print:p-1">Course Title</th>
+                                            <th className="border border-gray-600 p-3 text-left font-bold print:p-1">Exam Date</th>
+                                            <th className="border border-gray-600 p-3 text-left font-bold print:p-1">Session</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {hallTicketData.semesters[semester].map((exam, index) => (
+                                            <tr key={index} className={index % 2 === 0 ? 'bg-white/60' : 'bg-gray-50/60'}>
+                                                <td className="border border-gray-400 p-3 print:p-1">{index + 1}</td>
+                                                <td className="border border-gray-400 p-3 font-semibold print:p-1">{exam.course_code}</td>
+                                                <td className="border border-gray-400 p-3 print:p-1">{exam.course_title}</td>
+                                                <td className="border border-gray-400 p-3 print:p-1">{exam.exam_date}</td>
+                                                <td className="border border-gray-400 p-3 font-semibold print:p-1">{exam.session}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Session Timings */}
+                            <div className="bg-yellow-50/80 border-2 border-yellow-600 p-4 mb-4 relative z-10 print:mb-2 print:p-2">
+                                <h4 className="font-bold text-center text-lg mb-2 text-yellow-900 print:text-base print:mb-1">SESSION TIMINGS</h4>
+                                <div className="text-center text-sm font-semibold flex justify-center gap-8">
+                                    <p>FN : 09:00 AM TO 12:00 PM</p>
+                                    <p>AN : 01:00 PM TO 04:00 PM</p>
+                                </div>
+                            </div>
+
+                            {/* Footer Image - Pushed to bottom */}
+                            <div className="mt-auto relative z-10 w-full pt-4">
                                 <Image
-                                    src="/naac-badge-v2.png"
-                                    alt="NAAC Badge"
-                                    width={120}
-                                    height={120}
-                                    className="object-contain"
+                                    src="/hall_ticket_footer.png"
+                                    alt="Signatures and Instructions Part 1"
+                                    width={1000}
+                                    height={300}
+                                    className="w-full h-auto object-contain"
                                     priority
                                 />
                             </div>
                         </div>
+                    </motion.div>
 
-                        <div className="text-center bg-blue-900 text-white py-3 mb-6">
-                            <h3 className="text-base font-semibold">
-                                HALL TICKET FOR THE END SEMESTER EXAMINATIONS - NOV/DEC 2025
-                            </h3>
-                        </div>
-
-                        {/* Student Information */}
-                        <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
-                            <div className="border border-gray-300 p-3 bg-white/70">
-                                <span className="font-semibold">NAME OF THE CANDIDATE:</span>
-                                <p className="text-lg font-bold mt-1">{hallTicketData.student.name}</p>
-                            </div>
-                            <div className="border border-gray-300 p-3 bg-white/70">
-                                <span className="font-semibold">REGISTER NUMBER:</span>
-                                <p className="text-lg font-bold mt-1">{hallTicketData.student.register_no}</p>
-                            </div>
-                            {/* Department with full name - Change 2 */}
-                            <div className="border border-gray-300 p-3 bg-white/70">
-                                <span className="font-semibold">DEPARTMENT:</span>
-                                <p className="text-base font-bold mt-1 whitespace-pre-line leading-tight">
-                                    {getDepartmentFullName(hallTicketData.student.department)}
-                                </p>
-                            </div>
-                            <div className="border border-gray-300 p-3 bg-white/70">
-                                <span className="font-semibold">SEMESTER:</span>
-                                <p className="text-lg font-bold mt-1">{semester}</p>
-                            </div>
-                        </div>
-
-                        {/* Exam Schedule Table */}
-                        <div className="mb-6 relative z-10">
-                            <table className="w-full border-collapse border-2 border-gray-800 bg-white/80">
-                                <thead>
-                                    <tr className="bg-blue-900 text-white">
-                                        <th className="border border-gray-600 p-3 text-left font-bold">S.No</th>
-                                        <th className="border border-gray-600 p-3 text-left font-bold">Course Code</th>
-                                        <th className="border border-gray-600 p-3 text-left font-bold">Course Title</th>
-                                        <th className="border border-gray-600 p-3 text-left font-bold">Exam Date</th>
-                                        <th className="border border-gray-600 p-3 text-left font-bold">Session</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {hallTicketData.semesters[semester].map((exam, index) => (
-                                        <tr key={index} className={index % 2 === 0 ? 'bg-white/60' : 'bg-gray-50/60'}>
-                                            <td className="border border-gray-400 p-3">{index + 1}</td>
-                                            <td className="border border-gray-400 p-3 font-semibold">{exam.course_code}</td>
-                                            <td className="border border-gray-400 p-3">{exam.course_title}</td>
-                                            <td className="border border-gray-400 p-3">{exam.exam_date}</td>
-                                            <td className="border border-gray-400 p-3 font-semibold">{exam.session}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Session Timings */}
-                        <div className="bg-yellow-50/80 border-2 border-yellow-600 p-4 mb-4 relative z-10">
-                            <h4 className="font-bold text-center text-lg mb-2 text-yellow-900">SESSION TIMINGS</h4>
-                            <div className="text-center text-sm font-semibold">
-                                <p>FN : 09:00 AM TO 12:00 PM</p>
-                                <p>AN : 01:00 PM TO 04:00 PM</p>
-                            </div>
-                        </div>
-
-                        {/* Instructions */}
-                        <div className="text-xs text-gray-600 border-t-2 border-gray-300 pt-3 relative z-10">
-                            <ol className="list-decimal list-inside space-y-1">
-                                <li>In case of candidates who have been Readmitted/Transferred, this Hall Ticket is valid only for the current semester examinations.</li>
-                                <li>Any discrepancy in the Name / Date of Birth and missing of Photograph or incorrect Photograph, if any is to be updated to the COE office for the correction.</li>
-                                <li>Instructions printed overleaf are to be followed strictly.</li>
-                            </ol>
+                    {/* Page 2: Instructions Continuation */}
+                    <div className="max-w-5xl mx-auto bg-white shadow-2xl rounded-lg overflow-hidden mb-8 print:shadow-none print:mb-0 print:break-before-page print:h-screen">
+                        <div className="p-6 h-full flex flex-col justify-start items-center">
+                            <Image
+                                src="/hall_ticket_instructions.png"
+                                alt="Instructions Part 2"
+                                width={1000}
+                                height={1200} // Approximate height, should adjust to content
+                                className="w-full h-auto object-contain max-h-full"
+                                priority
+                            />
                         </div>
                     </div>
-                </motion.div>
+                </div>
             ))}
 
             <style jsx global>{`
                 @media print {
+                    @page {
+                        margin: 0;
+                        size: auto;
+                    }
                     body {
                         print-color-adjust: exact;
                         -webkit-print-color-adjust: exact;
+                        background-color: white;
                     }
                 }
             `}</style>
