@@ -119,12 +119,12 @@ export default function HallTicketPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 p-4 print:bg-white print:p-0">
+        <div className="min-h-screen bg-gray-100 p-2 md:p-4 print:bg-white print:p-0">
             {/* Print/Back Buttons - Hidden in print */}
             <div className="max-w-5xl mx-auto mb-4 flex justify-between print:hidden">
                 <button
                     onClick={handleBack}
-                    className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-lg"
+                    className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-bold transition shadow-lg text-sm md:text-base"
                 >
                     ← Back
                 </button>
@@ -134,15 +134,15 @@ export default function HallTicketPage() {
                     className={`${isDownloaded
                         ? 'bg-green-600 cursor-not-allowed opacity-80'
                         : 'bg-indigo-600 hover:bg-indigo-700'
-                        } text-white px-6 py-3 rounded-lg font-bold transition shadow-lg flex items-center gap-2`}
+                        } text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-bold transition shadow-lg flex items-center gap-2 text-sm md:text-base`}
                 >
                     {isDownloaded ? (
                         <>
-                            <span>✅</span> Downloaded
+                            <span>✅</span> <span className="hidden md:inline">Downloaded</span>
                         </>
                     ) : (
                         <>
-                            <span>🖨️</span> Download
+                            <span>🖨️</span> <span className="hidden md:inline">Download</span><span className="md:hidden">Print</span>
                         </>
                     )}
                 </button>
@@ -156,26 +156,26 @@ export default function HallTicketPage() {
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="max-w-5xl mx-auto bg-white shadow-2xl rounded-lg overflow-hidden mb-8 print:shadow-none print:mb-0 print:rounded-none relative print:h-screen print:flex print:flex-col"
+                        className="max-w-5xl mx-auto bg-white shadow-2xl rounded-lg overflow-hidden mb-8 print:shadow-none print:mb-0 print:rounded-none relative print:h-[297mm] print:w-full print:flex print:flex-col"
                     >
                         {/* Watermark Logo - Positioned to center of content area (approx) */}
-                        <div className="absolute inset-x-0 top-[28rem] flex justify-center pointer-events-none z-0 print:fixed print:top-[30%] print:left-0 print:w-full">
+                        <div className="absolute inset-x-0 top-[20rem] md:top-[28rem] flex justify-center pointer-events-none z-0 print:fixed print:top-[30%] print:left-0 print:w-full">
                             <Image
                                 src="/kite-watermark.png"
                                 alt="KITE Watermark"
                                 width={500}
                                 height={300}
-                                className="opacity-75"
+                                className="opacity-75 w-64 md:w-[500px]"
                                 style={{ objectFit: 'contain' }}
                             />
                         </div>
 
                         {/* Main Content Container */}
-                        <div className="border-4 border-blue-900 p-6 relative z-10 m-4 print:m-0 print:border-2 print:flex-1 print:flex print:flex-col">
+                        <div className="border-4 border-blue-900 p-4 md:p-6 relative z-10 m-2 md:m-4 print:m-0 print:border-2 print:flex-1 print:flex print:flex-col print:p-4">
                             {/* Top section with logo, institute name, and NAAC badge */}
-                            <div className="flex items-start justify-between gap-6 pb-4 mb-4">
+                            <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-4 md:gap-6 pb-4 mb-4 print:flex-row print:items-start print:gap-6">
                                 {/* KITE Logo - Top Left */}
-                                <div className="flex-shrink-0 w-48">
+                                <div className="flex-shrink-0 w-32 md:w-48 print:w-40">
                                     <Image
                                         src="/kite-logo.png"
                                         alt="KITE Logo"
@@ -188,27 +188,27 @@ export default function HallTicketPage() {
 
                                 {/* Institute Information - Center */}
                                 <div className="flex-1 text-center">
-                                    <h1 className="text-2xl font-bold text-blue-900 mb-1" style={{ fontStyle: 'italic' }}>
+                                    <h1 className="text-lg md:text-2xl font-bold text-blue-900 mb-1 print:text-xl" style={{ fontStyle: 'italic' }}>
                                         KGiSL Institute of Technology
                                     </h1>
-                                    <p className="text-xs text-gray-700 leading-relaxed">
+                                    <p className="text-[10px] md:text-xs text-gray-700 leading-relaxed print:text-xs">
                                         Affiliated to Anna University, Approved by AICTE, Recognised by UGC,
                                     </p>
-                                    <p className="text-xs text-gray-700">
+                                    <p className="text-[10px] md:text-xs text-gray-700 print:text-xs">
                                         Accredited by NAAC & NBA
                                     </p>
-                                    <p className="text-xs text-gray-700 mt-1">
+                                    <p className="text-[10px] md:text-xs text-gray-700 mt-1 print:text-xs">
                                         365, KGiSL Campus, Thudiyalur Road, Saravanampatti, Coimbatore-641035
                                     </p>
                                     <div className="mt-3 pt-3 border-t border-gray-300">
-                                        <h2 className="text-sm font-bold text-black tracking-wide">
+                                        <h2 className="text-xs md:text-sm font-bold text-black tracking-wide print:text-sm">
                                             OFFICE OF THE CONTROLLER OF EXAMINATIONS
                                         </h2>
                                     </div>
                                 </div>
 
                                 {/* NAAC Badge - Top Right */}
-                                <div className="flex-shrink-0 w-32">
+                                <div className="flex-shrink-0 w-24 md:w-32 print:w-28">
                                     <Image
                                         src="/naac-badge-v2.png"
                                         alt="NAAC Badge"
@@ -221,53 +221,53 @@ export default function HallTicketPage() {
                             </div>
 
                             <div className="text-center bg-blue-900 text-white py-2 mb-6 print:py-1">
-                                <h3 className="text-base font-semibold">
+                                <h3 className="text-xs md:text-base font-semibold print:text-sm">
                                     HALL TICKET FOR THE END SEMESTER EXAMINATIONS - NOV/DEC 2025
                                 </h3>
                             </div>
 
                             {/* Student Information */}
-                            <div className="grid grid-cols-2 gap-4 mb-6 text-sm print:mb-4">
-                                <div className="border border-gray-300 p-3 bg-white/70 print:p-2">
-                                    <span className="font-semibold block">NAME OF THE CANDIDATE:</span>
-                                    <p className="text-lg font-bold mt-1">{hallTicketData.student.name}</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 mb-6 text-sm print:grid-cols-2 print:gap-4 print:mb-4 print:text-sm">
+                                <div className="border border-gray-300 p-2 md:p-3 bg-white/70 print:p-2">
+                                    <span className="font-semibold block text-xs md:text-sm">NAME OF THE CANDIDATE:</span>
+                                    <p className="text-base md:text-lg font-bold mt-1 uppercase print:text-lg">{hallTicketData.student.name}</p>
                                 </div>
-                                <div className="border border-gray-300 p-3 bg-white/70 print:p-2">
-                                    <span className="font-semibold block">REGISTER NUMBER:</span>
-                                    <p className="text-lg font-bold mt-1">{hallTicketData.student.register_no}</p>
+                                <div className="border border-gray-300 p-2 md:p-3 bg-white/70 print:p-2">
+                                    <span className="font-semibold block text-xs md:text-sm">REGISTER NUMBER:</span>
+                                    <p className="text-base md:text-lg font-bold mt-1 print:text-lg">{hallTicketData.student.register_no}</p>
                                 </div>
-                                <div className="border border-gray-300 p-3 bg-white/70 print:p-2">
-                                    <span className="font-semibold block">DEPARTMENT:</span>
-                                    <p className="text-base font-bold mt-1 whitespace-pre-line leading-tight">
+                                <div className="border border-gray-300 p-2 md:p-3 bg-white/70 print:p-2">
+                                    <span className="font-semibold block text-xs md:text-sm">DEPARTMENT:</span>
+                                    <p className="text-xs md:text-base font-bold mt-1 whitespace-pre-line leading-tight print:text-sm">
                                         {getDepartmentFullName(hallTicketData.student.department)}
                                     </p>
                                 </div>
-                                <div className="border border-gray-300 p-3 bg-white/70 print:p-2">
-                                    <span className="font-semibold block">SEMESTER:</span>
-                                    <p className="text-lg font-bold mt-1">{semester}</p>
+                                <div className="border border-gray-300 p-2 md:p-3 bg-white/70 print:p-2">
+                                    <span className="font-semibold block text-xs md:text-sm">SEMESTER:</span>
+                                    <p className="text-base md:text-lg font-bold mt-1 print:text-lg">{semester}</p>
                                 </div>
                             </div>
 
                             {/* Exam Schedule Table */}
-                            <div className="mb-6 relative z-10 print:mb-4">
-                                <table className="w-full border-collapse border-2 border-gray-800 bg-white/80">
+                            <div className="mb-6 relative z-10 print:mb-4 overflow-x-auto">
+                                <table className="w-full border-collapse border-2 border-gray-800 bg-white/80 text-xs md:text-sm print:text-sm">
                                     <thead>
                                         <tr className="bg-blue-900 text-white print:bg-gray-300 print:text-black">
-                                            <th className="border border-gray-600 p-3 text-left font-bold print:p-1">S.No</th>
-                                            <th className="border border-gray-600 p-3 text-left font-bold print:p-1">Course Code</th>
-                                            <th className="border border-gray-600 p-3 text-left font-bold print:p-1">Course Title</th>
-                                            <th className="border border-gray-600 p-3 text-left font-bold print:p-1">Exam Date</th>
-                                            <th className="border border-gray-600 p-3 text-left font-bold print:p-1">Session</th>
+                                            <th className="border border-gray-600 p-2 md:p-3 text-left font-bold print:p-1 whitespace-nowrap md:whitespace-normal">S.No</th>
+                                            <th className="border border-gray-600 p-2 md:p-3 text-left font-bold print:p-1 whitespace-nowrap md:whitespace-normal">Course Code</th>
+                                            <th className="border border-gray-600 p-2 md:p-3 text-left font-bold print:p-1">Course Title</th>
+                                            <th className="border border-gray-600 p-2 md:p-3 text-left font-bold print:p-1 whitespace-nowrap">Exam Date</th>
+                                            <th className="border border-gray-600 p-2 md:p-3 text-left font-bold print:p-1">Session</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {hallTicketData.semesters[semester].map((exam, index) => (
                                             <tr key={index} className={index % 2 === 0 ? 'bg-white/60' : 'bg-gray-50/60'}>
-                                                <td className="border border-gray-400 p-3 print:p-1">{index + 1}</td>
-                                                <td className="border border-gray-400 p-3 font-semibold print:p-1">{exam.course_code}</td>
-                                                <td className="border border-gray-400 p-3 print:p-1">{exam.course_title}</td>
-                                                <td className="border border-gray-400 p-3 print:p-1">{exam.exam_date}</td>
-                                                <td className="border border-gray-400 p-3 font-semibold print:p-1">{exam.session}</td>
+                                                <td className="border border-gray-400 p-2 md:p-3 print:p-1 text-center">{index + 1}</td>
+                                                <td className="border border-gray-400 p-2 md:p-3 font-semibold print:p-1 whitespace-nowrap md:whitespace-normal">{exam.course_code}</td>
+                                                <td className="border border-gray-400 p-2 md:p-3 print:p-1 min-w-[150px]">{exam.course_title}</td>
+                                                <td className="border border-gray-400 p-2 md:p-3 print:p-1 whitespace-nowrap">{exam.exam_date}</td>
+                                                <td className="border border-gray-400 p-2 md:p-3 font-semibold print:p-1">{exam.session}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -275,9 +275,9 @@ export default function HallTicketPage() {
                             </div>
 
                             {/* Session Timings */}
-                            <div className="bg-yellow-50/80 border-2 border-yellow-600 p-4 mb-4 relative z-10 print:mb-2 print:p-2">
-                                <h4 className="font-bold text-center text-lg mb-2 text-yellow-900 print:text-base print:mb-1">SESSION TIMINGS</h4>
-                                <div className="text-center text-sm font-semibold flex justify-center gap-8">
+                            <div className="bg-yellow-50/80 border-2 border-yellow-600 p-2 md:p-4 mb-4 relative z-10 print:mb-2 print:p-2">
+                                <h4 className="font-bold text-center text-sm md:text-lg mb-1 md:mb-2 text-yellow-900 print:text-base print:mb-1">SESSION TIMINGS</h4>
+                                <div className="text-center text-xs md:text-sm font-semibold flex flex-col md:flex-row justify-center gap-1 md:gap-8 print:flex-row print:gap-8">
                                     <p>FN : 09:00 AM TO 12:00 PM</p>
                                     <p>AN : 01:00 PM TO 04:00 PM</p>
                                 </div>
@@ -298,11 +298,11 @@ export default function HallTicketPage() {
                     </motion.div>
 
                     {/* Page 2: Instructions Continuation */}
-                    <div className="max-w-5xl mx-auto bg-white shadow-2xl rounded-lg overflow-hidden mb-8 print:shadow-none print:mb-0 print:break-before-page print:h-screen">
-                        <div className="p-8 h-full flex flex-col relative print:p-8">
-                            <h2 className="text-center text-lg font-bold underline mb-6 uppercase">INSTRUCTIONS TO THE CANDIDATE</h2>
+                    <div className="max-w-5xl mx-auto bg-white shadow-2xl rounded-lg overflow-hidden mb-8 print:shadow-none print:mb-0 print:break-before-page print:h-[297mm] print:w-full">
+                        <div className="p-4 md:p-8 h-full flex flex-col relative print:p-8">
+                            <h2 className="text-center text-base md:text-lg font-bold underline mb-4 md:mb-6 uppercase print:text-lg print:mb-6">INSTRUCTIONS TO THE CANDIDATE</h2>
 
-                            <div className="text-sm text-gray-800 leading-relaxed space-y-3 print:text-xs print:leading-relaxed">
+                            <div className="text-xs md:text-sm text-gray-800 leading-relaxed space-y-2 md:space-y-3 print:text-xs print:leading-relaxed print:space-y-3 text-justify">
                                 <ol className="list-decimal list-outside pl-5 space-y-2">
                                     <li>Admission to the Examination is provisional.</li>
 
@@ -346,7 +346,7 @@ export default function HallTicketPage() {
                                 </ol>
                             </div>
 
-                            <div className="mt-12 mb-8 text-right font-bold text-gray-900 print:mt-8">
+                            <div className="mt-8 md:mt-12 mb-4 md:mb-8 text-right font-bold text-gray-900 text-xs md:text-base print:mt-8 print:text-sm">
                                 <p>CONTROLLER OF EXAMINATIONS</p>
                             </div>
                         </div>
@@ -358,7 +358,7 @@ export default function HallTicketPage() {
                 @media print {
                     @page {
                         margin: 0;
-                        size: auto;
+                        size: A4;
                     }
                     body {
                         print-color-adjust: exact;
