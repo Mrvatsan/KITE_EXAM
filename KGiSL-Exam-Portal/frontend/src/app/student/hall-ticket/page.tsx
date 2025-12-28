@@ -290,7 +290,7 @@ export default function HallTicketPage() {
                                         </thead>
                                         <tbody>
                                             {hallTicketData.semesters[semester].map((exam, index) => (
-                                                <tr key={index} className="odd:bg-white even:bg-gray-50">
+                                                <tr key={index} className="bg-transparent">
                                                     <td className="border border-gray-400 p-1 text-center">{index + 1}</td>
                                                     <td className="border border-gray-400 p-1 font-semibold">{exam.course_code}</td>
                                                     <td className="border border-gray-400 p-1">{exam.course_title}</td>
@@ -303,7 +303,7 @@ export default function HallTicketPage() {
                                 </div>
 
                                 {/* Timings */}
-                                <div className="border-2 border-yellow-600 bg-yellow-50 p-2 mb-2">
+                                <div className="border-2 border-yellow-600 bg-transparent p-2 mb-2">
                                     <h4 className="font-bold text-center text-sm text-yellow-900 mb-1">SESSION TIMINGS</h4>
                                     <div className="flex justify-center gap-12 text-xs font-bold text-gray-800">
                                         <span>FN : 09:00 AM TO 12:00 PM</span>
