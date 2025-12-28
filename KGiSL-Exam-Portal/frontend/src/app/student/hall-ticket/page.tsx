@@ -132,8 +132,8 @@ export default function HallTicketPage() {
                     onClick={handlePrint}
                     disabled={isDownloaded}
                     className={`${isDownloaded
-                            ? 'bg-green-600 cursor-not-allowed opacity-80'
-                            : 'bg-indigo-600 hover:bg-indigo-700'
+                        ? 'bg-green-600 cursor-not-allowed opacity-80'
+                        : 'bg-indigo-600 hover:bg-indigo-700'
                         } text-white px-6 py-3 rounded-lg font-bold transition shadow-lg flex items-center gap-2`}
                 >
                     {isDownloaded ? (
@@ -299,15 +299,56 @@ export default function HallTicketPage() {
 
                     {/* Page 2: Instructions Continuation */}
                     <div className="max-w-5xl mx-auto bg-white shadow-2xl rounded-lg overflow-hidden mb-8 print:shadow-none print:mb-0 print:break-before-page print:h-screen">
-                        <div className="p-6 h-full flex flex-col justify-start items-center">
-                            <Image
-                                src="/hall_ticket_instructions.png"
-                                alt="Instructions Part 2"
-                                width={1000}
-                                height={1200} // Approximate height, should adjust to content
-                                className="w-full h-auto object-contain max-h-full"
-                                priority
-                            />
+                        <div className="p-8 h-full flex flex-col relative print:p-8">
+                            <h2 className="text-center text-lg font-bold underline mb-6 uppercase">INSTRUCTIONS TO THE CANDIDATE</h2>
+
+                            <div className="text-sm text-gray-800 leading-relaxed space-y-3 print:text-xs print:leading-relaxed">
+                                <ol className="list-decimal list-outside pl-5 space-y-2">
+                                    <li>Admission to the Examination is provisional.</li>
+
+                                    <li>The Hall Ticket is issued subject to the candidate satisfying the Attendance and other requirements as per Rules, Regulations and Instructions by the Institution from time to time. If found later that the candidate fails to comply with the above requirements, the examinations written by the candidate will be treated as cancelled.</li>
+
+                                    <li>A seat marked with Register Number will be allotted to each candidate. Candidate will occupy the allotted seat at least 10 minutes before the commencement of the examinations. In no case, candidate shall be allowed to occupy a seat other than the seat allotted to him/her.</li>
+
+                                    <li>Normally the Candidate will not be permitted to enter the hall after the commencement of the examination. Only on extraordinary circumstances, the candidates will be permitted during the first thirty minutes of the examination after obtaining a written permission form the Principal / C.S Under any circumstances the Candidate shall not permitted to enter the hall after the expiry of first thirty minutes.</li>
+
+                                    <li>Candidate shall not be allowed to leave the examination hall before the expiry of 45 minutes from the commencement of examination. The candidate who leaves the examination hall during the period allotted for a paper will not be permitted to enter the hall again.</li>
+
+                                    <li>Candidate who is suffering from infectious diseases of any kind shall not be admitted to the examination hall.</li>
+
+                                    <li>Strict silence should be maintained in the examination hall.</li>
+
+                                    <li>Candidate is required to bring his / her own pens, pencils and erasers. Candidates should use only blue or black pens while answering his / her papers.</li>
+
+                                    <li>Before proceeding to write answers in answer book, the candidate should write his / her register number, semester, course code, title, date, session of the examination at the appropriate space provided in the first page of the answer book and nowhere else in the answer book or in any additional attachment like drawing sheet, smith chart etc.</li>
+
+                                    <li>If a candidate writes his/her register number on any part of the answer book / sheets other than one provided for or puts any special mark or writes anything which may disclose, in any way, the identity of the Candidate, he / she will render himself / herself liable for disciplinary action.</li>
+
+                                    <li>Writing of wrong register number in the answer book, will entail rejection of the answer book.</li>
+
+                                    <li>Candidate is not allowed to exceed the prescribed time assigned to each other.</li>
+
+                                    <li>Candidate shall not talk to their colleagues during the examination.</li>
+
+                                    <li>Candidate shall not carry any written/printed matter, any paper material, cell phone, smart watch, pen drive, ipad, programmable calculator, any unauthorized data sheet/table into the examination hall and if anything is found in his / her possession he / she shall be liable for disciplinary action.</li>
+
+                                    <li>No Candidate shall pass any part or whole of answer papers or question papers to any other candidate. No candidate shall allow another candidate to copy from his/her answer paper or copy from the answer paper of another candidate. If found committing such malpractice, the involved candidates shall be liable for disciplinary action.</li>
+
+                                    <li>Candidate found guilty or using unfair means of any nature shall be liable for disciplinary action.</li>
+
+                                    <li>Candidate will have to hand over the answer book to the Invigilator / Chief Superintendent before leaving the examination hall.</li>
+
+                                    <li>Candidate should produce the hall ticket on demand by the Invigilator / Chief Superintendent / Anna University Representative / Squad members.</li>
+
+                                    <li>Candidate shall not write anything in the Hall Ticket.</li>
+
+                                    <li>Candidates shall write only the Register no. in the space provided in the Question Paper. Any other writings in the Question Paper are strictly prohibited.</li>
+                                </ol>
+                            </div>
+
+                            <div className="mt-12 mb-8 text-right font-bold text-gray-900 print:mt-8">
+                                <p>CONTROLLER OF EXAMINATIONS</p>
+                            </div>
                         </div>
                     </div>
                 </div>
