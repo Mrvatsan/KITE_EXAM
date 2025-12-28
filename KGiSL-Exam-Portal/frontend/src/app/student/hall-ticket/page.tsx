@@ -118,7 +118,7 @@ const ContentFrame = ({ children }: { children: React.ReactNode }) => (
                     alt="KITE Watermark"
                     width={500}
                     height={300}
-                    className="opacity-[0.30] w-[500px]"
+                    className="opacity-[0.50] w-[500px]"
                     style={{ objectFit: 'contain' }}
                 />
             </div>
@@ -256,21 +256,21 @@ export default function HallTicketPage() {
 
                                 {/* Student Info Table - Fixed Grid */}
                                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4 text-sm">
-                                    <div className="border border-gray-300 p-2 bg-white/80">
+                                    <div className="border border-gray-300 p-2">
                                         <span className="font-semibold block text-[10px] text-gray-500">NAME OF THE CANDIDATE</span>
                                         <p className="font-bold uppercase text-[12pt]">{hallTicketData.student.name}</p>
                                     </div>
-                                    <div className="border border-gray-300 p-2 bg-white/80">
+                                    <div className="border border-gray-300 p-2">
                                         <span className="font-semibold block text-[10px] text-gray-500">REGISTER NUMBER</span>
                                         <p className="font-bold text-[12pt]">{hallTicketData.student.register_no}</p>
                                     </div>
-                                    <div className="border border-gray-300 p-2 bg-white/80">
+                                    <div className="border border-gray-300 p-2">
                                         <span className="font-semibold block text-[10px] text-gray-500">DEPARTMENT</span>
                                         <p className="font-bold text-[10pt] leading-tight">
                                             {getDepartmentFullName(hallTicketData.student.department)}
                                         </p>
                                     </div>
-                                    <div className="border border-gray-300 p-2 bg-white/80">
+                                    <div className="border border-gray-300 p-2">
                                         <span className="font-semibold block text-[10px] text-gray-500">SEMESTER</span>
                                         <p className="font-bold text-[12pt]">{semester}</p>
                                     </div>
@@ -328,12 +328,12 @@ export default function HallTicketPage() {
                         {/* ---------------- PAGE 2 ---------------- */}
                         <A4Page>
                             <ContentFrame>
-                                <div className="flex-1 flex flex-col p-2 bg-white/80">
+                                <div className="flex-1 flex flex-col p-2">
                                     <h2 className="text-center text-lg font-bold underline mb-2 uppercase tracking-wide">
                                         INSTRUCTIONS TO THE CANDIDATE
                                     </h2>
 
-                                    <div className="text-[9pt] text-gray-900 leading-tight text-justify">
+                                    <div className="text-[10pt] text-gray-900 leading-tight text-justify">
                                         <ol className="list-decimal list-outside pl-6 space-y-1">
                                             <li>Admission to the Examination is provisional.</li>
 
