@@ -219,9 +219,7 @@ export default function HallTicketPage() {
                 >
                     ← Back
                 </button>
-                <div className="text-sm font-medium opacity-80 hidden md:block">
-                    A4 Viewing Mode • Use landscape for best mobile view
-                </div>
+
                 <button
                     onClick={handlePrint}
                     disabled={isDownloaded}
