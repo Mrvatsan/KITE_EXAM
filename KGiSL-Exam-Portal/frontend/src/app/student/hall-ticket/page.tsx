@@ -328,13 +328,13 @@ export default function HallTicketPage() {
                         {/* ---------------- PAGE 2 ---------------- */}
                         <A4Page>
                             <ContentFrame>
-                                <div className="flex-1 flex flex-col p-4 bg-white/80">
-                                    <h2 className="text-center text-lg font-bold underline mb-6 uppercase tracking-wide">
+                                <div className="flex-1 flex flex-col p-2 bg-white/80">
+                                    <h2 className="text-center text-lg font-bold underline mb-2 uppercase tracking-wide">
                                         INSTRUCTIONS TO THE CANDIDATE
                                     </h2>
 
-                                    <div className="text-[10pt] text-gray-900 leading-relaxed text-justify">
-                                        <ol className="list-decimal list-outside pl-6 space-y-2">
+                                    <div className="text-[9pt] text-gray-900 leading-tight text-justify">
+                                        <ol className="list-decimal list-outside pl-6 space-y-1">
                                             <li>Admission to the Examination is provisional.</li>
 
                                             <li>The Hall Ticket is issued subject to the candidate satisfying the Attendance and other requirements as per Rules, Regulations and Instructions by the Institution from time to time. If found later that the candidate fails to comply with the above requirements, the examinations written by the candidate will be treated as cancelled.</li>
@@ -377,7 +377,7 @@ export default function HallTicketPage() {
                                         </ol>
                                     </div>
 
-                                    <div className="mt-auto mb-10 text-right">
+                                    <div className="mt-auto mb-4 text-right">
                                         <p className="font-bold text-sm">CONTROLLER OF EXAMINATIONS</p>
                                     </div>
                                 </div>
