@@ -97,3 +97,88 @@ class FacultyProfileView(APIView):
             
         except FacultyToken.DoesNotExist:
             return Response({'error': 'Invalid token'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+# ============ ADMIN FACULTY APIS ============
+
+class AdminFacultyAllocationView(APIView):
+    """
+    API for admin to trigger faculty allocation.
+    Input: { "dept_counts": { "CSE": 5, ... }, "date": "YYYY-MM-DD", "session": "FN" }
+    """
+    def post(self, request):
+        dept_counts = request.data.get('dept_counts') 
+        date_str = request.data.get('date')
+        session = request.data.get('session')
+        
+        if not dept_counts or not date_str or not session:
+            return Response(
+                {'error': 'Missing required fields: dept_counts, date, session'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        try:
+            from datetime import datetime
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            
+            from .utils import run_faculty_allocation
+            allocations = run_faculty_allocation(dept_counts, date_obj, session)
+            
+            data = []
+            for alloc in allocations:
+                data.append({
+                    'hall_no': alloc.hall_no,
+                    'faculty_name': alloc.faculty.name,
+                    'faculty_reg_no': alloc.faculty.register_no,
+                    'department': alloc.faculty.department,
+                    'course_code': alloc.course_code,
+                    'course_title': alloc.course_title
+                })
+                
+            return Response({
+                'message': 'Allocation completed successfully',
+                'allocations': data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminFacultyListView(APIView):
+    """
+    API for admin to view allocated faculty for a specific date and session.
+    """
+    def get(self, request):
+        date_str = request.query_params.get('date')
+        session = request.query_params.get('session')
+        
+        if not date_str or not session:
+             return Response(
+                 {'error': 'Missing date or session parameters'}, 
+                 status=status.HTTP_400_BAD_REQUEST
+             )
+             
+        try:
+            from datetime import datetime
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            
+            allocations = FacultyAllocation.objects.filter(
+                exam_date=date_obj, 
+                session=session
+            ).order_by('hall_no')
+            
+            data = []
+            for alloc in allocations:
+                data.append({
+                    'id': alloc.id,
+                    'hall_no': alloc.hall_no,
+                    'faculty_name': alloc.faculty.name,
+                    'faculty_reg_no': alloc.faculty.register_no,
+                    'department': alloc.faculty.department,
+                    'course_code': alloc.course_code,
+                    'course_title': alloc.course_title,
+                    'is_replaced': alloc.is_replaced
+                })
+            return Response(data)
+        except Exception as e:
+             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
