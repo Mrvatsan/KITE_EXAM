@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Faculty, FacultyToken
+from .models import Faculty, FacultyToken, FacultyAllocation
 from django.utils import timezone
 
 
@@ -341,3 +341,50 @@ class FacultyAllocationHistoryView(APIView):
             
         except FacultyToken.DoesNotExist:
             return Response({'error': 'Invalid token'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class FacultyAvailabilityUpdateView(APIView):
+    """
+    API for faculty to mark themselves as unavailable for a specific assignment.
+    Input: { "allocation_id": 123, "reason": "Sick leave" }
+    """
+    def post(self, request):
+        token_key = request.headers.get('Authorization')
+        allocation_id = request.data.get('allocation_id')
+        reason = request.data.get('reason')
+        
+        if not token_key:
+            return Response(
+                {'error': 'Authentication required'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        if not allocation_id or not reason:
+            return Response(
+                {'error': 'Missing allocation_id or reason'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        try:
+            key = token_key.replace('Token ', '').strip()
+            token = FacultyToken.objects.get(key=key)
+            faculty = token.faculty
+            
+            # Verify the allocation belongs to this faculty
+            try:
+                allocation = FacultyAllocation.objects.get(id=allocation_id, faculty=faculty)
+            except FacultyAllocation.DoesNotExist:
+                return Response(
+                    {'error': 'Allocation not found for this faculty'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+                
+            from .utils import replace_faculty
+            new_allocation = replace_faculty(allocation_id, reason)
+            
+            return Response({
+                'message': 'Availability updated. Replacement assigned.',
+                'replacement_faculty': new_allocation.faculty.name
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
