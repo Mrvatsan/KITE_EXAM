@@ -60,3 +60,21 @@ class FacultyAllocation(models.Model):
 
     def __str__(self):
         return f"{self.faculty.name} - Hall {self.hall_no} - {self.exam_date} ({self.session})"
+
+
+class FacultyRotationState(models.Model):
+    """
+    Persists the rotation state for each department to ensure fair distribution
+    of invigilation duties across faculty members.
+    """
+    department = models.CharField(max_length=50, primary_key=True)
+    last_row_index = models.IntegerField(default=-1)
+    academic_year = models.CharField(max_length=20, null=True, blank=True)  # Optional enhancement
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Faculty Rotation State'
+        verbose_name_plural = 'Faculty Rotation States'
+
+    def __str__(self):
+        return f"{self.department} - Last Index: {self.last_row_index}"
