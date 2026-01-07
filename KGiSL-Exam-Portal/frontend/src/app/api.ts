@@ -34,4 +34,40 @@ export const deleteStudents = async () => {
   return api.delete('/api/delete-all/');
 }
 
+export const loginFaculty = async (register_no: string, password: string) => {
+  return api.post('/api/faculty/login/', { register_no, password });
+};
+
+export const getFacultyDashboard = async (token: string) => {
+  return api.get('/api/faculty/dashboard/', {
+    headers: { 'Authorization': `Token ${token}` }
+  });
+};
+
+export const getFacultyStudents = async (token: string, hall_no: string, session: string) => {
+  return api.get(`/api/faculty/students/?hall_no=${hall_no}&session=${session}`, {
+    headers: { 'Authorization': `Token ${token}` }
+  });
+};
+
+export const getFacultyHistory = async (token: string) => {
+  return api.get('/api/faculty/history/', {
+    headers: { 'Authorization': `Token ${token}` }
+  });
+};
+
+export const updateFacultyAvailability = async (token: string, allocation_id: number, reason: string) => {
+  return api.post('/api/faculty/availability/update/', { allocation_id, reason }, {
+    headers: { 'Authorization': `Token ${token}` }
+  });
+};
+
+export const allocateFaculty = async (dept_counts: any, date: string, session: string) => {
+  return api.post('/api/faculty/admin/allocate/', { dept_counts, date, session });
+};
+
+export const getAllocatedFaculty = async (date: string, session: string) => {
+  return api.get(`/api/faculty/admin/list/?date=${date}&session=${session}`);
+};
+
 export default api;

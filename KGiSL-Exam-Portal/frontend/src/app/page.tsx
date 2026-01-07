@@ -1,11 +1,11 @@
 "use client";
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { loginAdmin, loginStudent } from './api';
+import { loginAdmin, loginStudent, loginFaculty } from './api';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-    const [role, setRole] = useState('student'); // 'student' or 'admin'
+    const [role, setRole] = useState('student'); // 'student', 'admin', or 'faculty'
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -24,6 +24,12 @@ export default function LoginPage() {
                 localStorage.setItem('role', 'admin');
                 localStorage.setItem('username', res.data.username);
                 router.push('/admin/dashboard');
+            } else if (role === 'faculty') {
+                res = await loginFaculty(identifier, password);
+                localStorage.setItem('role', 'faculty');
+                localStorage.setItem('facultyToken', res.data.token);
+                localStorage.setItem('facultyData', JSON.stringify(res.data));
+                router.push('/faculty/dashboard');
             } else {
                 res = await loginStudent(identifier, password);
                 localStorage.setItem('role', 'student');
@@ -61,6 +67,12 @@ export default function LoginPage() {
                         Student
                     </button>
                     <button
+                        onClick={() => setRole('faculty')}
+                        className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${role === 'faculty' ? 'bg-white text-indigo-900 shadow-md' : 'text-gray-700 hover:text-indigo-800'}`}
+                    >
+                        Faculty
+                    </button>
+                    <button
                         onClick={() => setRole('admin')}
                         className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${role === 'admin' ? 'bg-white text-indigo-900 shadow-md' : 'text-gray-700 hover:text-indigo-800'}`}
                     >
@@ -69,7 +81,9 @@ export default function LoginPage() {
                 </div>
 
                 <div className="text-center mb-6">
-                    <h2 className="text-white text-lg font-medium tracking-wide">{role === 'student' ? 'Student Login' : 'Admin Login'}</h2>
+                    <h2 className="text-white text-lg font-medium tracking-wide">
+                        {role === 'student' ? 'Student Login' : role === 'faculty' ? 'Faculty Login' : 'Admin Login'}
+                    </h2>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-5">
