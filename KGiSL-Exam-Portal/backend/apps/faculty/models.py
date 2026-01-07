@@ -9,7 +9,7 @@ class Faculty(models.Model):
     """
     name = models.CharField(max_length=100)
     register_no = models.CharField(max_length=50, unique=True)
-    department = models.CharField(max_length=50)
+    department = models.CharField(max_length=100)
     password = models.CharField(max_length=128)  # Hashed password
 
     def set_password(self, raw_password):
@@ -67,7 +67,7 @@ class FacultyRotationState(models.Model):
     Persists the rotation state for each department to ensure fair distribution
     of invigilation duties across faculty members.
     """
-    department = models.CharField(max_length=50, primary_key=True)
+    department = models.CharField(max_length=100, primary_key=True)
     last_row_index = models.IntegerField(default=-1)
     academic_year = models.CharField(max_length=20, null=True, blank=True)  # Optional enhancement
     updated_at = models.DateTimeField(auto_now=True)
