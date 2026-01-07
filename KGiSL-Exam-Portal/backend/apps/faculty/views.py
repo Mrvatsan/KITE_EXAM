@@ -214,12 +214,11 @@ class FacultyDashboardView(APIView):
             
             duties = FacultyAllocation.objects.filter(faculty=faculty, exam_date=today)
             
-            from apps.exams.utils import get_block_from_hall_no, get_floor_from_hall_no
+            from apps.exams.utils import resolve_hall_location
             
             data = []
             for duty in duties:
-                block = get_block_from_hall_no(duty.hall_no)
-                floor = get_floor_from_hall_no(duty.hall_no, block=block)
+                location = resolve_hall_location(duty.hall_no)
                 
                 data.append({
                     'id': duty.id,
@@ -228,8 +227,7 @@ class FacultyDashboardView(APIView):
                     'course_title': duty.course_title,
                     'session': duty.session,
                     'exam_date': duty.exam_date.strftime('%Y-%m-%d'),
-                    'block': block,
-                    'floor': floor,
+                    'location': location,
                     'is_replaced': duty.is_replaced
                 })
                 
