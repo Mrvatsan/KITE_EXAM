@@ -464,7 +464,7 @@ def get_floor_from_hall_no(hall_no, block=None):
         elif 600 <= hall_num <= 699:
             return 'Fifth Floor'
     
-    elif block == 'Innovation Block (IT Tower)':
+    elif block == 'Innovation Block':
         # Thousands series for Innovation Block
         if 1000 <= hall_num <= 1999:
             return 'First Floor'
