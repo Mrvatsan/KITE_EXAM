@@ -53,6 +53,7 @@ export default function FacultyHistory() {
                                 <th className="px-8 py-4">Date</th>
                                 <th className="px-8 py-4">Session</th>
                                 <th className="px-8 py-4">Hall</th>
+                                <th className="px-8 py-4">Location</th>
                                 <th className="px-8 py-4">Course</th>
                                 <th className="px-8 py-4">Status</th>
                             </tr>
@@ -74,6 +75,7 @@ export default function FacultyHistory() {
                                             </span>
                                         </td>
                                         <td className="px-8 py-4 font-mono font-bold text-indigo-600">{item.hall}</td>
+                                        <td className="px-8 py-4 text-xs font-bold text-gray-500">{item.location}</td>
                                         <td className="px-8 py-4">
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-gray-800">{item.course_title}</span>

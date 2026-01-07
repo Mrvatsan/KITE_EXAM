@@ -99,6 +99,7 @@ export default function FacultySeating() {
                             <div>
                                 <span className="text-indigo-200 text-xs font-bold uppercase tracking-widest">Hall Number</span>
                                 <h2 className="text-2xl font-black">{selectedAssignment.hall_no}</h2>
+                                <p className="text-indigo-300 text-[10px] font-bold uppercase">{selectedAssignment.location}</p>
                             </div>
                             <div>
                                 <span className="text-indigo-200 text-xs font-bold uppercase tracking-widest">Session</span>
