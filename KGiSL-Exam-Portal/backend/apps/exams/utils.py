@@ -379,3 +379,87 @@ def parse_hall_ticket_excel(file_obj):
                 continue
     
     return records
+
+
+# ============ HALL LOCATION UTILITIES ============
+
+def get_block_from_hall_no(hall_no):
+    """
+    Determine block from hall number.
+    
+    Rules:
+    - 3-digit numbers (100-999) = Academic Block
+    - 4+ digit numbers (1000+) = Innovation Block (IT Tower)
+    
+    Args:
+        hall_no: Hall number as string or int
+        
+    Returns:
+        str: Block name or 'Unknown'
+    """
+    try:
+        hall_num = int(str(hall_no).strip())
+    except (ValueError, AttributeError):
+        return 'Unknown'
+    
+    if 100 <= hall_num <= 999:
+        return 'Academic Block'
+    elif hall_num >= 1000:
+        return 'Innovation Block (IT Tower)'
+    
+    return 'Unknown'
+
+
+def get_floor_from_hall_no(hall_no, block=None):
+    """
+    Determine floor from hall number based on block.
+    
+    Rules:
+    - Academic Block: Uses hundreds series (100-199 = Ground, 200-299 = First, etc.)
+    - Innovation Block: Uses thousands series (1000-1999 = First, 2000-2999 = Second, etc.)
+    
+    Args:
+        hall_no: Hall number as string or int
+        block: Optional pre-computed block name (if None, will be computed)
+        
+    Returns:
+        str: Floor name or 'Unknown'
+    """
+    try:
+        hall_num = int(str(hall_no).strip())
+    except (ValueError, AttributeError):
+        return 'Unknown'
+    
+    # Compute block if not provided
+    if block is None:
+        block = get_block_from_hall_no(hall_no)
+    
+    if block == 'Academic Block':
+        # Hundreds series for Academic Block
+        if 100 <= hall_num <= 199:
+            return 'Ground Floor'
+        elif 200 <= hall_num <= 299:
+            return 'First Floor'
+        elif 300 <= hall_num <= 399:
+            return 'Second Floor'
+        elif 400 <= hall_num <= 499:
+            return 'Third Floor'
+        elif 500 <= hall_num <= 599:
+            return 'Fourth Floor'
+        elif 600 <= hall_num <= 699:
+            return 'Fifth Floor'
+    
+    elif block == 'Innovation Block (IT Tower)':
+        # Thousands series for Innovation Block
+        if 1000 <= hall_num <= 1999:
+            return 'First Floor'
+        elif 2000 <= hall_num <= 2999:
+            return 'Second Floor'
+        elif 3000 <= hall_num <= 3999:
+            return 'Third Floor'
+        elif 4000 <= hall_num <= 4999:
+            return 'Fourth Floor'
+        elif 5000 <= hall_num <= 5999:
+            return 'Fifth Floor'
+    
+    return 'Unknown'
