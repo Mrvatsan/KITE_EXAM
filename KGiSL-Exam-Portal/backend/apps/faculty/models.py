@@ -78,3 +78,31 @@ class FacultyRotationState(models.Model):
 
     def __str__(self):
         return f"{self.department} - Last Index: {self.last_row_index}"
+
+
+import secrets
+from django.utils import timezone
+
+class FacultyToken(models.Model):
+    """
+    Custom token model for Faculty authentication to ensure complete isolation
+    from Admin and Student authentication systems.
+    """
+    key = models.CharField(max_length=100, primary_key=True)
+    faculty = models.OneToOneField(Faculty, on_delete=models.CASCADE, related_name='auth_token')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = secrets.token_urlsafe(64)
+        if not self.expires_at:
+            # Token expires in 24 hours
+            self.expires_at = timezone.now() + timezone.timedelta(hours=24)
+        return super().save(*args, **kwargs)
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    def __str__(self):
+        return f"Token for {self.faculty.name}"
