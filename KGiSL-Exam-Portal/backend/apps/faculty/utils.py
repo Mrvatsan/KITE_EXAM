@@ -82,13 +82,9 @@ def run_faculty_allocation(dept_counts, date, session):
     date: Date object
     session: string ('FN' or 'AN')
     """
-    # 1. Idempotency Check
-    existing = FacultyAllocation.objects.filter(exam_date=date, session=session)
-    if existing.exists():
-        # If already allocated for this session, we might want to return it or raise error.
-        # User said "Admin cannot manually override... Admin can view assigned faculty list".
-        # We'll return the existing one for idempotency.
-        return existing
+    # 1. Clear existing allocations for this date and session to handle re-uploads/re-allocation
+    # This ensures that if a new dataset is uploaded or counts are updated, the faculty see fresh data.
+    FacultyAllocation.objects.filter(exam_date=date, session=session).delete()
 
     # 2. Get unique halls from active dataset
     active_dataset = Dataset.objects.filter(is_active=True).first()
@@ -111,6 +107,10 @@ def run_faculty_allocation(dept_counts, date, session):
     
     # Sort departments to ensure deterministic behavior
     for dept_name in sorted(dept_counts.keys()):
+        # Issue 2: Forcefully exclude IT Department from allocation algorithm
+        if dept_name.upper().strip() == 'IT':
+            continue
+            
         count = dept_counts[dept_name]
         if count <= 0:
             continue
@@ -139,9 +139,12 @@ def run_faculty_allocation(dept_counts, date, session):
         dept_faculties_df = df.iloc[indices]
         
         for _, row in dept_faculties_df.iterrows():
+            # Issue 3: Normalize register_no (Uppercase, Trim)
+            reg_no = str(row['register_no']).strip().upper()
+            
             # Create or get Faculty record
             faculty, _ = Faculty.objects.get_or_create(
-                register_no=str(row['register_no']),
+                register_no=reg_no,
                 defaults={
                     'name': str(row['name']),
                     'department': str(row['department']),

@@ -11,7 +11,7 @@ class FacultyLoginView(APIView):
     Verifies credentials and returns a secure token.
     """
     def post(self, request):
-        register_no = request.data.get('register_no')
+        register_no = str(request.data.get('register_no', '')).strip().upper()
         password = request.data.get('password')
 
         if not register_no or not password:
