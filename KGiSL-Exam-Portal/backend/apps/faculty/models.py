@@ -27,3 +27,36 @@ class Faculty(models.Model):
         verbose_name = 'Faculty'
         verbose_name_plural = 'Faculties'
         ordering = ['department', 'name']
+
+
+class FacultyAllocation(models.Model):
+    """
+    Tracks faculty-to-hall assignments for specific exam dates and sessions.
+    Enforces uniqueness: one faculty can only have one assignment per date-session.
+    """
+    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='allocations')
+    hall_no = models.CharField(max_length=50)
+    course_code = models.CharField(max_length=100)
+    course_title = models.CharField(max_length=300)
+    exam_date = models.DateField()
+    session = models.CharField(max_length=20)
+    is_replaced = models.BooleanField(default=False)
+    replaced_by = models.ForeignKey(
+        Faculty, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='replacements'
+    )
+    reason_for_unavailability = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Faculty Allocation'
+        verbose_name_plural = 'Faculty Allocations'
+        ordering = ['exam_date', 'session', 'hall_no']
+        # Ensure one faculty cannot be assigned multiple halls in the same session
+        unique_together = [['faculty', 'exam_date', 'session']]
+
+    def __str__(self):
+        return f"{self.faculty.name} - Hall {self.hall_no} - {self.exam_date} ({self.session})"
