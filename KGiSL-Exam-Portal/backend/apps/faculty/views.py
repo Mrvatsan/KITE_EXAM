@@ -210,9 +210,14 @@ class FacultyDashboardView(APIView):
             
             faculty = token.faculty
             # Use current date (UTC as per settings or local if needed)
+            # Ensure we fetch from DB every time (No caching)
             today = timezone.localtime(timezone.now()).date()
             
-            duties = FacultyAllocation.objects.filter(faculty=faculty, exam_date=today)
+            # Fetch all assignments for today, ordered by session (FN then AN)
+            duties = FacultyAllocation.objects.filter(
+                faculty=faculty, 
+                exam_date=today
+            ).order_by('session')
             
             from apps.exams.utils import resolve_hall_location
             
