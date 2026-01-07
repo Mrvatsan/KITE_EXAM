@@ -125,6 +125,10 @@ export default function AdminDashboard() {
                         <button onClick={handleRefresh} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center gap-2 transition transform hover:-translate-y-1">
                             <span>🔄 Refresh Seating Plans</span>
                         </button>
+
+                        <button onClick={() => router.push('/admin/faculty-allocation')} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center gap-2 transition transform hover:-translate-y-1">
+                            <span>👨‍🏫 Faculty Allocation</span>
+                        </button>
                     </div>
                 </motion.div>
             </div>
