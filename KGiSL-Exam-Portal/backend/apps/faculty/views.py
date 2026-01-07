@@ -165,7 +165,7 @@ class AdminFacultyListView(APIView):
             allocations = FacultyAllocation.objects.filter(
                 exam_date=date_obj, 
                 session=session
-            ).order_by('hall_no')
+            ).exclude(faculty__department__iexact='IT').order_by('hall_no')
             
             data = []
             for alloc in allocations:
