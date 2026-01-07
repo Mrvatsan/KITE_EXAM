@@ -1,7 +1,5 @@
-from .views import (
-    FacultyLoginView, FacultyLogoutView, FacultyProfileView,
-    AdminFacultyAllocationView, AdminFacultyListView,
-    FacultyDashboardView, FacultyStudentSeatingView, FacultyAllocationHistoryView
+    FacultyDashboardView, FacultyStudentSeatingView, FacultyAllocationHistoryView,
+    FacultyAvailabilityUpdateView
 )
 
 urlpatterns = [
@@ -13,4 +11,5 @@ urlpatterns = [
     path('dashboard/', FacultyDashboardView.as_view(), name='faculty-dashboard'),
     path('students/', FacultyStudentSeatingView.as_view(), name='faculty-students'),
     path('history/', FacultyAllocationHistoryView.as_view(), name='faculty-history'),
+    path('availability/update/', FacultyAvailabilityUpdateView.as_view(), name='faculty-availability-update'),
 ]

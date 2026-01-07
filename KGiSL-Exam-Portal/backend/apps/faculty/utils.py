@@ -178,3 +178,70 @@ def run_faculty_allocation(dept_counts, date, session):
         
     FacultyAllocation.objects.bulk_create(allocations)
     return FacultyAllocation.objects.filter(exam_date=date, session=session)
+
+
+@transaction.atomic
+def replace_faculty(allocation_id, reason):
+    """
+    Emergency replacement logic.
+    Identifies the next available faculty in the same department and reassigns the hall.
+    """
+    allocation = FacultyAllocation.objects.select_for_update().get(id=allocation_id)
+    if allocation.is_replaced:
+        raise ValueError("This duty has already been replaced.")
+        
+    dept_name = allocation.faculty.department
+    df = get_faculty_sheet_data(dept_name)
+    total_rows = len(df)
+    
+    state, _ = FacultyRotationState.objects.get_or_create(department=dept_name)
+    
+    found_replacement = None
+    original_reg_no = allocation.faculty.register_no
+    
+    # Search for first faculty from current pointer onwards who is available
+    for i in range(1, total_rows): 
+        idx = (state.last_row_index + i) % total_rows
+        row = df.iloc[idx]
+        reg_no = str(row['register_no'])
+        
+        if reg_no == original_reg_no:
+            continue
+            
+        # Check if already assigned for this session
+        is_assigned = FacultyAllocation.objects.filter(
+            faculty__register_no=reg_no,
+            exam_date=allocation.exam_date,
+            session=allocation.session
+        ).exists()
+        
+        if not is_assigned:
+            replacement_name = str(row['name'])
+            replacement_faculty, _ = Faculty.objects.get_or_create(
+                register_no=reg_no,
+                defaults={'name': replacement_name, 'department': dept_name}
+            )
+            if _:
+                replacement_faculty.set_password('Kite@123')
+                replacement_faculty.save()
+            
+            # Update pointers? No, we won't move the main rotation pointer for an emergency replacement
+            # to keep the regular rotation fair for the 'next day'.
+            
+            # Mark original as replaced
+            allocation.is_replaced = True
+            allocation.reason_for_unavailability = reason
+            allocation.replaced_by = replacement_faculty
+            allocation.save()
+            
+            # Create new allocation for replacement
+            return FacultyAllocation.objects.create(
+                faculty=replacement_faculty,
+                hall_no=allocation.hall_no,
+                course_code=allocation.course_code,
+                course_title=allocation.course_title,
+                exam_date=allocation.exam_date,
+                session=allocation.session
+            )
+            
+    raise ValueError(f"No available replacement found in department {dept_name} for this session.")
