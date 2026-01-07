@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 
 export default function AdminFacultyAllocation() {
     const [counts, setCounts] = useState<any>({
-        'CSE': 0, 'AI&ML': 0, 'AI&DS': 0, 'ECE': 0, 'IT': 0, 'CYS': 0, 'MECH': 0, 'CSBS': 0
+        'CSE': 0, 'AI&ML': 0, 'AI&DS': 0, 'ECE': 0, 'CYS': 0, 'MECH': 0, 'CSBS': 0
     });
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [session, setSession] = useState('FN');
