@@ -389,7 +389,7 @@ def get_block_from_hall_no(hall_no):
     
     Rules:
     - 3-digit numbers (100-999) = Academic Block
-    - 4+ digit numbers (1000+) = Innovation Block (IT Tower)
+    - 4-digit numbers (1000-5999) = Innovation Block
     
     Args:
         hall_no: Hall number as string or int
@@ -404,10 +404,25 @@ def get_block_from_hall_no(hall_no):
     
     if 100 <= hall_num <= 999:
         return 'Academic Block'
-    elif hall_num >= 1000:
-        return 'Innovation Block (IT Tower)'
+    elif 1000 <= hall_num <= 5999:
+        return 'Innovation Block'
     
     return 'Unknown'
+
+
+def resolve_hall_location(hall_no):
+    """
+    Returns combined "Floor – Block" string.
+    """
+    block = get_block_from_hall_no(hall_no)
+    if block == 'Unknown':
+        return 'Unknown'
+        
+    floor = get_floor_from_hall_no(hall_no, block=block)
+    if floor == 'Unknown':
+        return 'Unknown'
+        
+    return f"{floor} – {block}"
 
 
 def get_floor_from_hall_no(hall_no, block=None):
