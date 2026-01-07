@@ -68,7 +68,7 @@ export default function FacultyDashboard() {
                             <div className="p-6 space-y-4">
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="text-gray-500 font-semibold uppercase tracking-wider">Location</span>
-                                    <span className="text-indigo-900 font-bold">{duty.block} - {duty.floor}</span>
+                                    <span className="text-indigo-900 font-bold">{duty.location}</span>
                                 </div>
                                 <hr className="border-gray-100" />
                                 <div className="space-y-2">
