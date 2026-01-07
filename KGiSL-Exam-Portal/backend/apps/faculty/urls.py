@@ -1,3 +1,7 @@
+from django.urls import path
+from .views import (
+    FacultyLoginView, FacultyLogoutView, FacultyProfileView,
+    AdminFacultyAllocationView, AdminFacultyListView,
     FacultyDashboardView, FacultyStudentSeatingView, FacultyAllocationHistoryView,
     FacultyAvailabilityUpdateView
 )

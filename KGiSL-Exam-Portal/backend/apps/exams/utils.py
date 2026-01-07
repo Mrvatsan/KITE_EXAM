@@ -398,8 +398,9 @@ def get_block_from_hall_no(hall_no):
         str: Block name or 'Unknown'
     """
     try:
-        hall_num = int(str(hall_no).strip())
-    except (ValueError, AttributeError):
+        # Handle cases like "201.0" or "1001.0" coming from Excel exports
+        hall_num = int(float(str(hall_no).strip()))
+    except (ValueError, AttributeError, TypeError):
         return 'Unknown'
     
     if 100 <= hall_num <= 999:
@@ -441,8 +442,9 @@ def get_floor_from_hall_no(hall_no, block=None):
         str: Floor name or 'Unknown'
     """
     try:
-        hall_num = int(str(hall_no).strip())
-    except (ValueError, AttributeError):
+        # Handle cases like "201.0" or "1001.0" coming from Excel exports
+        hall_num = int(float(str(hall_no).strip()))
+    except (ValueError, AttributeError, TypeError):
         return 'Unknown'
     
     # Compute block if not provided
