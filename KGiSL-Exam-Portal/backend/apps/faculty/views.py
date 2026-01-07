@@ -182,3 +182,162 @@ class AdminFacultyListView(APIView):
             return Response(data)
         except Exception as e:
              return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ============ FACULTY SUBMODULE APIS ============
+
+class FacultyDashboardView(APIView):
+    """
+    Returns today's invigilation duty for the logged-in faculty.
+    """
+    def get(self, request):
+        token_key = request.headers.get('Authorization')
+        if not token_key:
+            return Response(
+                {'error': 'Authentication required'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+            
+        try:
+            key = token_key.replace('Token ', '').strip()
+            token = FacultyToken.objects.get(key=key)
+            if token.is_expired():
+                token.delete()
+                return Response(
+                    {'error': 'Token expired'}, 
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            faculty = token.faculty
+            # Use current date (UTC as per settings or local if needed)
+            today = timezone.localtime(timezone.now()).date()
+            
+            duties = FacultyAllocation.objects.filter(faculty=faculty, exam_date=today)
+            
+            from apps.exams.utils import get_block_from_hall_no, get_floor_from_hall_no
+            
+            data = []
+            for duty in duties:
+                block = get_block_from_hall_no(duty.hall_no)
+                floor = get_floor_from_hall_no(duty.hall_no, block=block)
+                
+                data.append({
+                    'id': duty.id,
+                    'hall_no': duty.hall_no,
+                    'course_code': duty.course_code,
+                    'course_title': duty.course_title,
+                    'session': duty.session,
+                    'exam_date': duty.exam_date.strftime('%Y-%m-%d'),
+                    'block': block,
+                    'floor': floor,
+                    'is_replaced': duty.is_replaced
+                })
+                
+            return Response(data)
+            
+        except FacultyToken.DoesNotExist:
+            return Response({'error': 'Invalid token'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class FacultyStudentSeatingView(APIView):
+    """
+    Returns students assigned to the faculty's hall for today's session.
+    """
+    def get(self, request):
+        token_key = request.headers.get('Authorization')
+        hall_no = request.query_params.get('hall_no')
+        session = request.query_params.get('session')
+        
+        if not token_key:
+            return Response(
+                {'error': 'Authentication required'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+            
+        try:
+            key = token_key.replace('Token ', '').strip()
+            token = FacultyToken.objects.get(key=key)
+            faculty = token.faculty
+            today = timezone.localtime(timezone.now()).date()
+            
+            # Verify assignment
+            assignment_query = FacultyAllocation.objects.filter(
+                faculty=faculty, 
+                exam_date=today
+            )
+            if hall_no:
+                assignment_query = assignment_query.filter(hall_no=hall_no)
+            if session:
+                assignment_query = assignment_query.filter(session=session)
+            
+            assignment = assignment_query.first()
+            if not assignment:
+                return Response(
+                    {'error': 'No assignment found for this hall/session today.'}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            from apps.exams.models import Student, Dataset
+            active_dataset = Dataset.objects.filter(is_active=True).first()
+            students = Student.objects.filter(
+                dataset=active_dataset,
+                exam_date=today,
+                session=assignment.session,
+                hall_no=assignment.hall_no
+            ).order_by('seat_no')
+            
+            student_data = []
+            from apps.exams.utils import get_department_from_register_no
+            for s in students:
+                student_data.append({
+                    'register_no': s.register_no,
+                    'name': s.name,
+                    'department': get_department_from_register_no(s.register_no),
+                    'seat_no': s.seat_no
+                })
+                
+            return Response({
+                'hall_no': assignment.hall_no,
+                'session': assignment.session,
+                'course_code': assignment.course_code,
+                'course_title': assignment.course_title,
+                'students': student_data
+            })
+            
+        except FacultyToken.DoesNotExist:
+            return Response({'error': 'Invalid token'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class FacultyAllocationHistoryView(APIView):
+    """
+    Returns full history of invigilation for the logged-in faculty.
+    """
+    def get(self, request):
+        token_key = request.headers.get('Authorization')
+        if not token_key:
+            return Response(
+                {'error': 'Authentication required'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+            
+        try:
+            key = token_key.replace('Token ', '').strip()
+            token = FacultyToken.objects.get(key=key)
+            faculty = token.faculty
+            
+            history = FacultyAllocation.objects.filter(faculty=faculty).order_by('-exam_date', '-session')
+            
+            data = []
+            for h in history:
+                data.append({
+                    'date': h.exam_date.strftime('%Y-%m-%d'),
+                    'hall': h.hall_no,
+                    'session': h.session,
+                    'course_code': h.course_code,
+                    'course_title': h.course_title,
+                    'status': 'Replaced' if h.is_replaced else 'Completed'
+                })
+            return Response(data)
+            
+        except FacultyToken.DoesNotExist:
+            return Response({'error': 'Invalid token'}, status=status.HTTP_401_UNAUTHORIZED)
