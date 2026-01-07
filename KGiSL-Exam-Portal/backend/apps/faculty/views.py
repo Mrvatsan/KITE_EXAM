@@ -294,8 +294,10 @@ class FacultyStudentSeatingView(APIView):
                     'seat_no': s.seat_no
                 })
                 
+            from apps.exams.utils import resolve_hall_location
             return Response({
                 'hall_no': assignment.hall_no,
+                'location': resolve_hall_location(assignment.hall_no),
                 'session': assignment.session,
                 'course_code': assignment.course_code,
                 'course_title': assignment.course_title,
@@ -325,11 +327,13 @@ class FacultyAllocationHistoryView(APIView):
             
             history = FacultyAllocation.objects.filter(faculty=faculty).order_by('-exam_date', '-session')
             
+            from apps.exams.utils import resolve_hall_location
             data = []
             for h in history:
                 data.append({
                     'date': h.exam_date.strftime('%Y-%m-%d'),
                     'hall': h.hall_no,
+                    'location': resolve_hall_location(h.hall_no),
                     'session': h.session,
                     'course_code': h.course_code,
                     'course_title': h.course_title,
