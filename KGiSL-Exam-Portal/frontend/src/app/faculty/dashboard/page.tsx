@@ -35,8 +35,8 @@ export default function FacultyDashboard() {
     return (
         <div className="space-y-8">
             <header>
-                <h1 className="text-3xl font-extrabold text-gray-900">Today's Assignments</h1>
-                <p className="text-gray-500 mt-2 font-medium">View and manage your invigilation duties for today.</p>
+                <h1 className="text-3xl font-extrabold text-gray-900">Assigned Duties</h1>
+                <p className="text-gray-500 mt-2 font-medium">View and manage your invigilation duties.</p>
             </header>
 
             {error && (
@@ -56,9 +56,12 @@ export default function FacultyDashboard() {
                             className={`rounded-2xl shadow-xl overflow-hidden border ${duty.is_replaced ? 'bg-gray-50 border-gray-200' : 'bg-white border-white'}`}
                         >
                             <div className={`px-6 py-4 flex justify-between items-center ${duty.is_replaced ? 'bg-gray-200' : 'bg-indigo-600'} text-white`}>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xl">🏛️</span>
-                                    <span className="font-bold text-lg">Hall {duty.hall_no}</span>
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xl">🏛️</span>
+                                        <span className="font-bold text-lg">Hall {duty.hall_no}</span>
+                                    </div>
+                                    <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest">{duty.exam_date}</span>
                                 </div>
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${duty.session === 'FN' ? 'bg-yellow-400 text-yellow-900' : 'bg-blue-400 text-blue-900'}`}>
                                     {duty.session === 'FN' ? 'Morning (FN)' : 'Afternoon (AN)'}
@@ -92,8 +95,8 @@ export default function FacultyDashboard() {
                         className="col-span-full bg-white p-12 rounded-3xl text-center shadow-inner border-2 border-dashed border-gray-200"
                     >
                         <div className="text-6xl mb-4">😴</div>
-                        <h3 className="text-xl font-bold text-gray-800">No Assignments Today</h3>
-                        <p className="text-gray-500 mt-2 font-medium">You don't have any invigilation duties scheduled for today.</p>
+                        <h3 className="text-xl font-bold text-gray-800">No Assignments Found</h3>
+                        <p className="text-gray-500 mt-2 font-medium">You don't have any invigilation duties scheduled.</p>
                     </motion.div>
                 )}
             </div>

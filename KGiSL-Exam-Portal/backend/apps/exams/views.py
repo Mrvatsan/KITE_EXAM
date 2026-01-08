@@ -112,6 +112,21 @@ class DatasetUploadView(APIView):
                         print(f"DEBUG: Date parsing error for value '{e_date}' (type: {type(e_date)}): {parse_error}")
                         parsed_date = None
                 
+                # Clean hall and seat numbers (remove .0 from Excel decimal numbers)
+                hall_no = str(row.get('hall_no', '')).strip()
+                seat_no = str(row.get('seat_no', '')).strip()
+                
+                try:
+                    if '.' in hall_no:
+                        hall_no = str(int(float(hall_no)))
+                except:
+                    pass
+                try:
+                    if '.' in seat_no:
+                        seat_no = str(int(float(seat_no)))
+                except:
+                    pass
+
                 students_to_create.append(Student(
                     dataset=dataset,
                     register_no=str(row.get('register_no', '')),
@@ -120,8 +135,8 @@ class DatasetUploadView(APIView):
                     course_title=str(row.get('course_title', '')),
                     exam_date=parsed_date, 
                     session=str(row.get('session', '')),
-                    hall_no=str(row.get('hall_no', '')),
-                    seat_no=str(row.get('seat_no', ''))
+                    hall_no=hall_no,
+                    seat_no=seat_no
                 ))
             
             Student.objects.bulk_create(students_to_create)

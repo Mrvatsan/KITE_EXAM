@@ -213,11 +213,10 @@ class FacultyDashboardView(APIView):
             # Ensure we fetch from DB every time (No caching)
             today = timezone.localtime(timezone.now()).date()
             
-            # Fetch all assignments for today, ordered by session (FN then AN)
+            # Fetch all assignments for the faculty
             duties = FacultyAllocation.objects.filter(
-                faculty=faculty, 
-                exam_date=today
-            ).order_by('session')
+                faculty=faculty
+            ).order_by('exam_date', 'session')
             
             from apps.exams.utils import resolve_hall_location
             
@@ -265,8 +264,7 @@ class FacultyStudentSeatingView(APIView):
             
             # Verify assignment
             assignment_query = FacultyAllocation.objects.filter(
-                faculty=faculty, 
-                exam_date=today
+                faculty=faculty
             )
             if hall_no:
                 assignment_query = assignment_query.filter(hall_no=hall_no)
@@ -284,7 +282,7 @@ class FacultyStudentSeatingView(APIView):
             active_dataset = Dataset.objects.filter(is_active=True).first()
             students = Student.objects.filter(
                 dataset=active_dataset,
-                exam_date=today,
+                exam_date=assignment.exam_date,
                 session=assignment.session,
                 hall_no=assignment.hall_no
             ).order_by('seat_no')
@@ -292,11 +290,19 @@ class FacultyStudentSeatingView(APIView):
             student_data = []
             from apps.exams.utils import get_department_from_register_no
             for s in students:
+                # Clean seat number (remove .0 if it's a decimal from Excel)
+                seat_no = str(s.seat_no).strip()
+                try:
+                    if '.' in seat_no:
+                        seat_no = str(int(float(seat_no)))
+                except:
+                    pass
+
                 student_data.append({
                     'register_no': s.register_no,
                     'name': s.name,
                     'department': get_department_from_register_no(s.register_no),
-                    'seat_no': s.seat_no
+                    'seat_no': seat_no
                 })
                 
             from apps.exams.utils import resolve_hall_location

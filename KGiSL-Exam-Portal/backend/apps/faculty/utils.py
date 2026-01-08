@@ -99,8 +99,11 @@ def run_faculty_allocation(dept_counts, date, session):
     
     # 3. Validation: sum(counts) == number_of_unique_halls
     requested_total = sum(dept_counts.values())
+    if total_halls == 0:
+        raise ValueError(f"No exam halls found for {date} ({session}). Please ensure student seating data is uploaded and the dataset is activated for this date.")
+    
     if requested_total != total_halls:
-        raise ValueError(f"Validation failed: Sum of faculty counts ({requested_total}) must equal number of halls ({total_halls}).")
+        raise ValueError(f"Validation failed: Sum of faculty counts ({requested_total}) must equal number of halls ({total_halls}) for {date} ({session}).")
 
     # 4. Extract faculties based on rotation
     selected_faculties = []

@@ -75,7 +75,7 @@ export default function FacultySeating() {
                                 onClick={() => handleAssignmentChange(i)}
                                 className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${selectedAssignment?.id === a.id ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
                             >
-                                Hall {a.hall_no} ({a.session})
+                                Hall {a.hall_no} ({a.exam_date} - {a.session})
                             </button>
                         ))}
                     </div>
