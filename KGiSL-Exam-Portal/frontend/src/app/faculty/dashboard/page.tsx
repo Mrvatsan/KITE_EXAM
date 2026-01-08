@@ -94,9 +94,9 @@ export default function FacultyDashboard() {
                         animate={{ opacity: 1 }}
                         className="col-span-full bg-white p-12 rounded-3xl text-center shadow-inner border-2 border-dashed border-gray-200"
                     >
-                        <div className="text-6xl mb-4">😴</div>
-                        <h3 className="text-xl font-bold text-gray-800">No Assignments Found</h3>
-                        <p className="text-gray-500 mt-2 font-medium">You don't have any invigilation duties scheduled.</p>
+                        <div className="text-6xl mb-4">🗓️</div>
+                        <h3 className="text-xl font-bold text-gray-800">No active invigilation assigned</h3>
+                        <p className="text-gray-500 mt-2 font-medium">Please check back later once the admin activates the schedule.</p>
                     </motion.div>
                 )}
             </div>
