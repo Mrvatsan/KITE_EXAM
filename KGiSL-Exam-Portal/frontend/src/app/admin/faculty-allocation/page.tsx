@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { allocateFaculty, getAllocatedFaculty } from '../../api';
+import { allocateFaculty, getAllocatedFaculty, confirmFacultyAllocation, getFacultyStatus, toggleFacultyActive } from '../../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
@@ -14,12 +14,25 @@ export default function AdminFacultyAllocation() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [results, setResults] = useState<any[]>([]);
+    const [isConfirmed, setIsConfirmed] = useState(false);
+    const [isFacultyActive, setIsFacultyActive] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
         const role = localStorage.getItem('role');
         if (role !== 'admin') router.push('/');
-    }, []);
+        checkStatus();
+    }, [date, session]);
+
+    const checkStatus = async () => {
+        try {
+            const res = await getFacultyStatus(date, session);
+            setIsConfirmed(res.data.is_confirmed);
+            setIsFacultyActive(res.data.is_faculty_active);
+        } catch (err) {
+            console.error("Status check failed", err);
+        }
+    };
 
     const handleChange = (dept: string, val: string) => {
         setCounts({ ...counts, [dept]: parseInt(val) || 0 });
@@ -32,11 +45,34 @@ export default function AdminFacultyAllocation() {
         try {
             const res = await allocateFaculty(counts, date, session, designation);
             setResults(res.data.allocations);
-            alert('Allocation successful!');
+            alert('Preview generated! Review and click Confirm to finalize.');
         } catch (err: any) {
             setError(err.response?.data?.error || 'Allocation failed');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleConfirm = async () => {
+        if (!confirm("Are you sure? This will lock the allocation and update rotation states.")) return;
+        setLoading(true);
+        try {
+            await confirmFacultyAllocation(date, session);
+            setIsConfirmed(true);
+            alert('Allocation confirmed and locked.');
+        } catch (err: any) {
+            alert(err.response?.data?.error || 'Confirmation failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleToggleActive = async (val: boolean) => {
+        try {
+            await toggleFacultyActive(date, session, val);
+            setIsFacultyActive(val);
+        } catch (err) {
+            alert('Failed to toggle faculty visibility');
         }
     };
 
@@ -91,9 +127,10 @@ export default function AdminFacultyAllocation() {
                                     <div>
                                         <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Designation</label>
                                         <select
+                                            disabled={isConfirmed}
                                             value={designation}
                                             onChange={(e) => setDesignation(e.target.value)}
-                                            className="w-full p-2 border border-gray-200 rounded-lg text-sm font-bold bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                                            className="w-full p-2 border border-gray-200 rounded-lg text-sm font-bold bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 disabled:opacity-50"
                                         >
                                             <option value="Professor">Professor</option>
                                             <option value="Associate Professor">Associate Professor</option>
@@ -132,9 +169,10 @@ export default function AdminFacultyAllocation() {
                                                     <input
                                                         type="number"
                                                         min="0"
+                                                        disabled={isConfirmed}
                                                         value={counts[dept]}
                                                         onChange={(e) => handleChange(dept, e.target.value)}
-                                                        className="w-full p-2 border border-gray-100 bg-gray-50 rounded-lg text-sm font-bold"
+                                                        className="w-full p-2 border border-gray-100 bg-gray-50 rounded-lg text-sm font-bold disabled:opacity-50"
                                                     />
                                                 </div>
                                             ))}
@@ -144,30 +182,59 @@ export default function AdminFacultyAllocation() {
 
                                 {error && <p className="text-red-500 text-xs font-bold bg-red-50 p-3 rounded-lg">{error}</p>}
 
-                                <div className="flex gap-3 pt-4">
-                                    <button
-                                        type="submit"
-                                        disabled={loading}
-                                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all active:scale-95 disabled:bg-gray-300"
-                                    >
-                                        {loading ? 'Processing...' : 'Allocate Now'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleRefresh}
-                                        disabled={loading}
-                                        className="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition disabled:opacity-50"
-                                    >
-                                        🔄
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleFetchResults}
-                                        disabled={loading}
-                                        className="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition disabled:opacity-50"
-                                    >
-                                        👁️
-                                    </button>
+                                <div className="flex flex-col gap-3 pt-4">
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="submit"
+                                            disabled={loading || isConfirmed}
+                                            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all active:scale-95 disabled:bg-gray-300"
+                                        >
+                                            {loading ? 'Processing...' : isConfirmed ? 'Locked' : 'Allocate Now'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleRefresh}
+                                            disabled={loading || isConfirmed}
+                                            className="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition disabled:opacity-50"
+                                        >
+                                            🔄
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleFetchResults}
+                                            disabled={loading}
+                                            className="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition disabled:opacity-50"
+                                        >
+                                            👁️
+                                        </button>
+                                    </div>
+
+                                    {!isConfirmed && results.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={handleConfirm}
+                                            disabled={loading}
+                                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all active:scale-95"
+                                        >
+                                            ✓ Confirm Allocation
+                                        </button>
+                                    )}
+
+                                    {isConfirmed && (
+                                        <div className="flex flex-col gap-3 p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs font-bold text-indigo-900 uppercase">Faculty Visibility</span>
+                                                <button
+                                                    onClick={() => handleToggleActive(!isFacultyActive)}
+                                                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase transition-colors ${isFacultyActive ? 'bg-emerald-500 text-white' : 'bg-gray-300 text-gray-600'
+                                                        }`}
+                                                >
+                                                    {isFacultyActive ? 'Active' : 'Hidden'}
+                                                </button>
+                                            </div>
+                                            <p className="text-[10px] text-indigo-400 font-medium">Toggle this to show/hide assignments on faculty dashboards.</p>
+                                        </div>
+                                    )}
                                 </div>
                             </form>
                         </motion.section>
@@ -182,7 +249,7 @@ export default function AdminFacultyAllocation() {
                         >
                             <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                                 <div>
-                                    <h2 className="text-xl font-bold text-gray-800">Allocation Results</h2>
+                                    <h2 className="text-xl font-bold text-gray-800">Allocation Results {isConfirmed && <span className="ml-2 bg-indigo-100 text-indigo-600 text-[10px] px-2 py-1 rounded uppercase tracking-tighter">Locked</span>}</h2>
                                     <p className="text-gray-400 text-xs font-medium">Deterministic faculty-hall mapping for {date} ({session})</p>
                                 </div>
                                 <span className="text-indigo-600 font-black text-lg">{results.length} Halls</span>
@@ -201,7 +268,7 @@ export default function AdminFacultyAllocation() {
                                     <tbody className="divide-y divide-gray-100 font-medium">
                                         {results.length > 0 ? (
                                             results.map((r, i) => (
-                                                <tr key={i} className="hover:bg-indigo-50/20 transition-colors">
+                                                <tr key={i} className={`hover:bg-indigo-50/20 transition-colors ${!r.is_confirmed && !isConfirmed ? 'bg-amber-50/30' : ''}`}>
                                                     <td className="px-8 py-4"><span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-black">{r.hall_no}</span></td>
                                                     <td className="px-8 py-4">
                                                         <div className="flex flex-col">
