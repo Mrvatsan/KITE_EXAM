@@ -54,7 +54,8 @@ def get_faculty_sheet_data(department):
         mapping = {
             'EMP CODE': 'register_no',
             'NAME': 'name',
-            'DEPT': 'department'
+            'DEPT': 'department',
+            'DESIGNATION': 'designation'
         }
         
         # Check if required columns exist
@@ -68,14 +69,16 @@ def get_faculty_sheet_data(department):
                      mapping[col] = 'name'
                  if 'DEPT' in col and 'department' not in df.columns:
                      mapping[col] = 'department'
+                 if 'DESIGNATION' in col and 'designation' not in df.columns:
+                     mapping[col] = 'designation'
         
         df = df.rename(columns=mapping)
-        return df[['register_no', 'name', 'department']]
+        return df[['register_no', 'name', 'department', 'designation']]
     except Exception as e:
         raise ValueError(f"Error reading faculty data for {department}: {str(e)}")
 
 @transaction.atomic
-def run_faculty_allocation(dept_counts, date, session):
+def run_faculty_allocation(dept_counts, date, session, designation):
     """
     Main allocation algorithm.
     dept_counts: dict { department_name: count }
