@@ -146,6 +146,29 @@ class AdminFacultyAllocationView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class AdminFacultyConfirmView(APIView):
+    """
+    API for admin to lock/confirm faculty allocation.
+    """
+    def post(self, request):
+        date_str = request.data.get('date')
+        session = request.data.get('session')
+        
+        if not date_str or not session:
+            return Response({'error': 'Date and session required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            from datetime import datetime
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            
+            from .utils import confirm_faculty_allocation
+            confirm_faculty_allocation(date_obj, session)
+            
+            return Response({'message': 'Allocation confirmed and locked'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class AdminFacultyListView(APIView):
     """
     API for admin to view allocated faculty for a specific date and session.
@@ -212,7 +235,6 @@ class FacultyDashboardView(APIView):
             
             faculty = token.faculty
             # Use current date (UTC as per settings or local if needed)
-            # Ensure we fetch from DB every time (No caching)
             today = timezone.localtime(timezone.now()).date()
             
             # Fetch all assignments for the faculty
