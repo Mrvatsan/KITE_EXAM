@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     FacultyLoginView, FacultyLogoutView, FacultyProfileView,
     AdminFacultyAllocationView, AdminFacultyListView,
-    AdminFacultyConfirmView,
+    AdminFacultyConfirmView, AdminFacultyStatusView,
     FacultyDashboardView, FacultyStudentSeatingView, FacultyAllocationHistoryView,
     FacultyAvailabilityUpdateView
 )
@@ -14,6 +14,7 @@ urlpatterns = [
     path('admin/allocate/', AdminFacultyAllocationView.as_view(), name='faculty-admin-allocate'),
     path('admin/list/', AdminFacultyListView.as_view(), name='faculty-admin-list'),
     path('admin/confirm/', AdminFacultyConfirmView.as_view(), name='faculty-admin-confirm'),
+    path('admin/status/', AdminFacultyStatusView.as_view(), name='faculty-admin-status'),
     path('dashboard/', FacultyDashboardView.as_view(), name='faculty-dashboard'),
     path('students/', FacultyStudentSeatingView.as_view(), name='faculty-students'),
     path('history/', FacultyAllocationHistoryView.as_view(), name='faculty-history'),

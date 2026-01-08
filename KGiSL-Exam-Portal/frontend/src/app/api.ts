@@ -70,8 +70,17 @@ export const confirmFacultyAllocation = async (date: string, session: string) =>
   return api.post('/api/faculty/admin/confirm/', { date, session });
 };
 
+export const getFacultyStatus = async (date: string, session: string) => {
+  return api.get(`/api/faculty/admin/status/?date=${date}&session=${session}`);
+};
+
+export const toggleFacultyActive = async (date: string, session: string, is_faculty_active: boolean) => {
+  return api.post('/api/faculty/admin/status/', { date, session, is_faculty_active });
+};
+
 export const getAllocatedFaculty = async (date: string, session: string) => {
   return api.get(`/api/faculty/admin/list/?date=${date}&session=${session}`);
 };
 
+export const default_api = api;
 export default api;

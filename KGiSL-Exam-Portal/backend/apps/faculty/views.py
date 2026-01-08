@@ -138,7 +138,7 @@ class AdminFacultyAllocationView(APIView):
                 })
                 
             return Response({
-                'message': 'Allocation completed successfully',
+                'message': 'Preview allocation generated',
                 'allocations': data
             }, status=status.HTTP_200_OK)
             
@@ -165,6 +165,50 @@ class AdminFacultyConfirmView(APIView):
             confirm_faculty_allocation(date_obj, session)
             
             return Response({'message': 'Allocation confirmed and locked'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminFacultyStatusView(APIView):
+    """
+    API for admin to toggle faculty visibility and check status.
+    """
+    def get(self, request):
+        date_str = request.query_params.get('date')
+        session = request.query_params.get('session')
+        
+        if not date_str or not session:
+            return Response({'error': 'Date and session required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        from .models import FacultyAllocationStatus
+        from datetime import datetime
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+        
+        status_obj, _ = FacultyAllocationStatus.objects.get_or_create(exam_date=date_obj, session=session)
+        
+        return Response({
+            'is_confirmed': status_obj.is_confirmed,
+            'is_faculty_active': status_obj.is_faculty_active
+        })
+
+    def post(self, request):
+        date_str = request.data.get('date')
+        session = request.data.get('session')
+        is_active = request.data.get('is_faculty_active')
+        
+        if not date_str or not session or is_active is None:
+            return Response({'error': 'Date, session, and is_faculty_active required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            from .models import FacultyAllocationStatus
+            from datetime import datetime
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            
+            status_obj, _ = FacultyAllocationStatus.objects.get_or_create(exam_date=date_obj, session=session)
+            status_obj.is_faculty_active = is_active
+            status_obj.save()
+            
+            return Response({'message': f'Faculty visibility set to {is_active}'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -237,17 +281,38 @@ class FacultyDashboardView(APIView):
             # Use current date (UTC as per settings or local if needed)
             today = timezone.localtime(timezone.now()).date()
             
+            from .models import FacultyAllocationStatus
+            
             # Fetch all assignments for the faculty
+            # Only show assignments where (date, session) is confirmed and faculty_active is True
+            confirmed_status = FacultyAllocationStatus.objects.filter(is_confirmed=True, is_faculty_active=True)
+            
+            # This logic might be slow if there are many entries, but manageable for faculty duties.
+            # Alternatively, join FacultyAllocation with FacultyAllocationStatus?
+            # For now, let's filter allocations and then check status.
+            
             duties = FacultyAllocation.objects.filter(
-                faculty=faculty
+                faculty=faculty,
+                is_confirmed=True
             ).order_by('exam_date', 'session')
             
+            data = []
             from apps.exams.utils import resolve_hall_location
             
-            data = []
             for duty in duties:
-                location = resolve_hall_location(duty.hall_no)
+                # Visibility Gate: Check per date/session
+                # Only show if the global toggle for this slot is ON
+                # AND it is confirmed (implicitly true if in FacultyAllocationStatus with is_confirmed=True)
+                status_obj = FacultyAllocationStatus.objects.filter(
+                    exam_date=duty.exam_date, 
+                    session=duty.session,
+                    is_faculty_active=True
+                ).exists()
                 
+                if not status_obj:
+                    continue
+
+                location = resolve_hall_location(duty.hall_no)
                 data.append({
                     'id': duty.id,
                     'hall_no': duty.hall_no,
