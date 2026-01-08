@@ -63,7 +63,7 @@ def get_faculty_sheet_data(department):
         if missing:
              # Try fuzzy match if exact match fails
              for col in df.columns:
-                 if 'EMP' in col or 'CODE' in col and 'register_no' not in df.columns:
+                 if ('EMP' in col or 'CODE' in col) and 'register_no' not in df.columns:
                      mapping[col] = 'register_no'
                  if 'NAME' in col and 'name' not in df.columns:
                      mapping[col] = 'name'
@@ -84,10 +84,17 @@ def run_faculty_allocation(dept_counts, date, session, designation):
     dept_counts: dict { department_name: count }
     date: Date object
     session: string ('FN' or 'AN')
+    designation: string ('Professor', 'Associate Professor', 'Assistant Professor')
     """
-    # 1. Clear existing allocations for this date and session to handle re-uploads/re-allocation
-    # This ensures that if a new dataset is uploaded or counts are updated, the faculty see fresh data.
-    FacultyAllocation.objects.filter(exam_date=date, session=session).delete()
+    from .models import FacultyAllocationStatus
+    
+    # 0. Check if already confirmed
+    status_obj, _ = FacultyAllocationStatus.objects.get_or_create(exam_date=date, session=session)
+    if status_obj.is_confirmed:
+        raise ValueError(f"Allocation for {date} ({session}) is already locked/confirmed.")
+
+    # 1. Clear existing unconfirmed allocations for this date and session
+    FacultyAllocation.objects.filter(exam_date=date, session=session, is_confirmed=False).delete()
 
     # 2. Get unique halls from active dataset
     active_dataset = Dataset.objects.filter(is_active=True).first()
@@ -103,17 +110,15 @@ def run_faculty_allocation(dept_counts, date, session, designation):
     # 3. Validation: sum(counts) == number_of_unique_halls
     requested_total = sum(dept_counts.values())
     if total_halls == 0:
-        raise ValueError(f"No exam halls found for {date} ({session}). Please ensure student seating data is uploaded and the dataset is activated for this date.")
+        raise ValueError(f"No exam halls found for {date} ({session}).")
     
     if requested_total != total_halls:
-        raise ValueError(f"Validation failed: Sum of faculty counts ({requested_total}) must equal number of halls ({total_halls}) for {date} ({session}).")
+        raise ValueError(f"Validation failed: Sum of faculty counts ({requested_total}) must equal number of halls ({total_halls}).")
 
-    # 4. Extract faculties based on rotation
+    # 4. Extract faculties based on rotation (Preview mode - don't update state)
     selected_faculties = []
     
-    # Sort departments to ensure deterministic behavior
     for dept_name in sorted(dept_counts.keys()):
-        # Issue 2: Forcefully exclude IT Department from allocation algorithm
         if dept_name.upper().strip() == 'IT':
             continue
             
@@ -153,10 +158,7 @@ def run_faculty_allocation(dept_counts, date, session, designation):
         dept_faculties_df = df.iloc[indices]
         
         for _, row in dept_faculties_df.iterrows():
-            # Issue 3: Normalize register_no (Uppercase, Trim)
             reg_no = str(row['register_no']).strip().upper()
-            
-            # Create or get Faculty record
             faculty, _ = Faculty.objects.get_or_create(
                 register_no=reg_no,
                 defaults={
@@ -164,24 +166,15 @@ def run_faculty_allocation(dept_counts, date, session, designation):
                     'department': str(row['department']),
                 }
             )
-            # Ensure password is set if new
             if _:
                 faculty.set_password('Kite@123')
                 faculty.save()
-                
             selected_faculties.append(faculty)
-            
-        # Update pointer to the last index selected
-        state.last_row_index = indices[-1]
-        state.save()
 
-    # 5. Mapping: Assign one faculty per hall
-    # Mapping must be deterministic: halls are sorted, faculties are collected per dept (which are also sorted)
+    # 5. Mapping: Assign one faculty per hall (Unconfirmed)
     allocations = []
     for i, hall_no in enumerate(unique_halls_list):
         faculty = selected_faculties[i]
-        
-        # Get course details for this hall (Assumes one course per hall/session as per system rules)
         student_info = Student.objects.filter(dataset=active_dataset, exam_date=date, session=session, hall_no=hall_no).first()
         
         allocations.append(FacultyAllocation(
@@ -190,11 +183,65 @@ def run_faculty_allocation(dept_counts, date, session, designation):
             course_code=student_info.course_code if student_info else "N/A",
             course_title=student_info.course_title if student_info else "N/A",
             exam_date=date,
-            session=session
+            session=session,
+            is_confirmed=False # Mark as preview
         ))
         
     FacultyAllocation.objects.bulk_create(allocations)
     return FacultyAllocation.objects.filter(exam_date=date, session=session)
+
+
+@transaction.atomic
+def confirm_faculty_allocation(date, session):
+    """
+    Finalize allocation logic: updates rotation state and locks the session.
+    """
+    from .models import FacultyAllocationStatus
+    
+    status_obj, _ = FacultyAllocationStatus.objects.get_or_create(exam_date=date, session=session)
+    if status_obj.is_confirmed:
+        raise ValueError("Allocation already confirmed.")
+        
+    allocations = FacultyAllocation.objects.filter(exam_date=date, session=session, is_confirmed=False)
+    if not allocations.exists():
+        raise ValueError("No preview allocations found to confirm.")
+        
+    # Group by dept and designation to update rotation pointers
+    # Note: We need to know what designation was used. 
+    # For now, we assume all in one batch have the same designation or we look it up.
+    
+    # Update rotation state
+    for alloc in allocations:
+        # We need the index in the Excel sheet. 
+        # This is a bit redundant but ensures fair rotation.
+        dept = alloc.faculty.department
+        # Get designation from Excel (safest way to ensure match)
+        df = get_faculty_sheet_data(dept)
+        # Find the designation for this faculty
+        faculty_row = df[df['register_no'].astype(str).str.strip().str.upper() == alloc.faculty.register_no.strip().upper()]
+        if faculty_row.empty:
+            continue
+        designation = faculty_row.iloc[0]['designation']
+        
+        # Filter df to relevant designation the same way allocation does
+        designation_df = df[df['designation'].astype(str).str.strip().str.upper() == designation.strip().upper()].reset_index(drop=True)
+        
+        # Find new index
+        new_row_idx_search = designation_df[designation_df['register_no'].astype(str).str.strip().str.upper() == alloc.faculty.register_no.strip().upper()]
+        if not new_row_idx_search.empty:
+            new_idx = new_row_idx_search.index[0]
+            state, _ = FacultyRotationState.objects.get_or_create(department=dept, designation=designation)
+            # We want to set the pointer to the MAX index touched in this batch for this dept/designation
+            if new_idx > state.last_row_index or True: # Force update to the last one processed
+                 state.last_row_index = new_idx
+                 state.save()
+
+    # Mark all as confirmed
+    allocations.update(is_confirmed=True)
+    status_obj.is_confirmed = True
+    status_obj.save()
+    
+    return True
 
 
 @transaction.atomic
