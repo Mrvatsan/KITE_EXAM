@@ -41,6 +41,7 @@ class FacultyAllocation(models.Model):
     exam_date = models.DateField()
     session = models.CharField(max_length=20)
     is_replaced = models.BooleanField(default=False)
+    is_confirmed = models.BooleanField(default=False)
     replaced_by = models.ForeignKey(
         Faculty, 
         on_delete=models.SET_NULL, 
@@ -64,20 +65,42 @@ class FacultyAllocation(models.Model):
 
 class FacultyRotationState(models.Model):
     """
-    Persists the rotation state for each department to ensure fair distribution
+    Persists the rotation state for each department and designation to ensure fair distribution
     of invigilation duties across faculty members.
     """
-    department = models.CharField(max_length=100, primary_key=True)
+    department = models.CharField(max_length=100)
+    designation = models.CharField(max_length=100, default='Professor')
     last_row_index = models.IntegerField(default=-1)
-    academic_year = models.CharField(max_length=20, null=True, blank=True)  # Optional enhancement
+    academic_year = models.CharField(max_length=20, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = 'Faculty Rotation State'
         verbose_name_plural = 'Faculty Rotation States'
+        unique_together = [['department', 'designation']]
 
     def __str__(self):
-        return f"{self.department} - Last Index: {self.last_row_index}"
+        return f"{self.department} ({self.designation}) - Last Index: {self.last_row_index}"
+
+
+class FacultyAllocationStatus(models.Model):
+    """
+    Tracks the confirmation and visibility status of faculty allocations 
+    for a specific date and session.
+    """
+    exam_date = models.DateField()
+    session = models.CharField(max_length=20)
+    is_confirmed = models.BooleanField(default=False)
+    is_faculty_active = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Faculty Allocation Status'
+        verbose_name_plural = 'Faculty Allocation Statuses'
+        unique_together = [['exam_date', 'session']]
+
+    def __str__(self):
+        return f"{self.exam_date} ({self.session}) - Confirmed: {self.is_confirmed}, Active: {self.is_faculty_active}"
 
 
 import secrets
