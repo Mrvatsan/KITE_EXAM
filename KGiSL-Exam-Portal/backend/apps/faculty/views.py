@@ -110,10 +110,11 @@ class AdminFacultyAllocationView(APIView):
         dept_counts = request.data.get('dept_counts') 
         date_str = request.data.get('date')
         session = request.data.get('session')
+        designation = request.data.get('designation')
         
-        if not dept_counts or not date_str or not session:
+        if not dept_counts or not date_str or not session or not designation:
             return Response(
-                {'error': 'Missing required fields: dept_counts, date, session'}, 
+                {'error': 'Missing required fields: dept_counts, date, session, designation'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
             
@@ -122,7 +123,7 @@ class AdminFacultyAllocationView(APIView):
             date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
             
             from .utils import run_faculty_allocation
-            allocations = run_faculty_allocation(dept_counts, date_obj, session)
+            allocations = run_faculty_allocation(dept_counts, date_obj, session, designation)
             
             data = []
             for alloc in allocations:
@@ -132,7 +133,8 @@ class AdminFacultyAllocationView(APIView):
                     'faculty_reg_no': alloc.faculty.register_no,
                     'department': alloc.faculty.department,
                     'course_code': alloc.course_code,
-                    'course_title': alloc.course_title
+                    'course_title': alloc.course_title,
+                    'is_confirmed': alloc.is_confirmed
                 })
                 
             return Response({

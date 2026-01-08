@@ -62,8 +62,8 @@ export const updateFacultyAvailability = async (token: string, allocation_id: nu
   });
 };
 
-export const allocateFaculty = async (dept_counts: any, date: string, session: string) => {
-  return api.post('/api/faculty/admin/allocate/', { dept_counts, date, session });
+export const allocateFaculty = async (dept_counts: any, date: string, session: string, designation: string) => {
+  return api.post('/api/faculty/admin/allocate/', { dept_counts, date, session, designation });
 };
 
 export const getAllocatedFaculty = async (date: string, session: string) => {
