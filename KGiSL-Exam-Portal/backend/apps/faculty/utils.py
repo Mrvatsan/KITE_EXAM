@@ -122,20 +122,28 @@ def run_faculty_allocation(dept_counts, date, session, designation):
             continue
             
         df = get_faculty_sheet_data(dept_name)
+        
+        # Filter by designation
+        df = df[df['designation'].astype(str).str.strip().str.upper() == designation.strip().upper()]
         total_rows = len(df)
         
         if total_rows < count:
-            raise ValueError(f"Department {dept_name} has only {total_rows} faculty members, but {count} were requested.")
+            raise ValueError(f"Dept {dept_name} has only {total_rows} {designation}s, but {count} requested.")
             
         # Get rotation state
-        state, created = FacultyRotationState.objects.get_or_create(department=dept_name)
+        state, created = FacultyRotationState.objects.get_or_create(
+            department=dept_name, 
+            designation=designation
+        )
         
-        # Pointer logic:
-        # If first time (last_row_index == -1), start such that we pick the last 'count' rows
-        # "Allocation starts from the last faculty row... If admin selects N faculty -> last N are chosen."
+        # Pointer logic (Bottom-up selection):
+        # We start from the bottom if last_row_index is -1, 
+        # picking 'count' rows sequentially upwards.
         if state.last_row_index == -1:
+            # If never allocated, start from the bottom-most possible subset
             start_index = (total_rows - count) % total_rows
         else:
+            # If previous allocation exists, start from the next one upwards
             start_index = (state.last_row_index + 1) % total_rows
             
         indices = []
