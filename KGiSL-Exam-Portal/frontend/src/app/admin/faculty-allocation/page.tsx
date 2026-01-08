@@ -10,6 +10,7 @@ export default function AdminFacultyAllocation() {
     });
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [session, setSession] = useState('FN');
+    const [designation, setDesignation] = useState('Assistant Professor');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [results, setResults] = useState<any[]>([]);
@@ -29,7 +30,7 @@ export default function AdminFacultyAllocation() {
         setLoading(true);
         setError('');
         try {
-            const res = await allocateFaculty(counts, date, session);
+            const res = await allocateFaculty(counts, date, session, designation);
             setResults(res.data.allocations);
             alert('Allocation successful!');
         } catch (err: any) {
@@ -37,6 +38,11 @@ export default function AdminFacultyAllocation() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleRefresh = () => {
+        setResults([]);
+        setError('');
     };
 
     const handleFetchResults = async () => {
@@ -81,44 +87,58 @@ export default function AdminFacultyAllocation() {
                             </h2>
 
                             <form onSubmit={handleAllocate} className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Date</label>
-                                        <input
-                                            type="date"
-                                            value={date}
-                                            onChange={(e) => setDate(e.target.value)}
-                                            className="w-full p-2 border border-gray-200 rounded-lg text-sm font-bold bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Session</label>
+                                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Designation</label>
                                         <select
-                                            value={session}
-                                            onChange={(e) => setSession(e.target.value)}
+                                            value={designation}
+                                            onChange={(e) => setDesignation(e.target.value)}
                                             className="w-full p-2 border border-gray-200 rounded-lg text-sm font-bold bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100"
                                         >
-                                            <option value="FN">Morning (FN)</option>
-                                            <option value="AN">Afternoon (AN)</option>
+                                            <option value="Professor">Professor</option>
+                                            <option value="Associate Professor">Associate Professor</option>
+                                            <option value="Assistant Professor">Assistant Professor</option>
                                         </select>
                                     </div>
-                                </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Date</label>
+                                            <input
+                                                type="date"
+                                                value={date}
+                                                onChange={(e) => setDate(e.target.value)}
+                                                className="w-full p-2 border border-gray-200 rounded-lg text-sm font-bold bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Session</label>
+                                            <select
+                                                value={session}
+                                                onChange={(e) => setSession(e.target.value)}
+                                                className="w-full p-2 border border-gray-200 rounded-lg text-sm font-bold bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                                            >
+                                                <option value="FN">Morning (FN)</option>
+                                                <option value="AN">Afternoon (AN)</option>
+                                            </select>
+                                        </div>
+                                    </div>
 
-                                <div className="space-y-4">
-                                    <label className="block text-xs font-bold text-gray-400 uppercase">Department Counts</label>
-                                    <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                                        {Object.keys(counts).map(dept => (
-                                            <div key={dept} className="flex flex-col">
-                                                <span className="text-[10px] font-bold text-gray-500 mb-1">{dept}</span>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={counts[dept]}
-                                                    onChange={(e) => handleChange(dept, e.target.value)}
-                                                    className="w-full p-2 border border-gray-100 bg-gray-50 rounded-lg text-sm font-bold"
-                                                />
-                                            </div>
-                                        ))}
+                                    <div className="space-y-4 pt-2">
+                                        <label className="block text-xs font-bold text-gray-400 uppercase">Department Counts</label>
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                                            {Object.keys(counts).map(dept => (
+                                                <div key={dept} className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-gray-500 mb-1">{dept}</span>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        value={counts[dept]}
+                                                        onChange={(e) => handleChange(dept, e.target.value)}
+                                                        className="w-full p-2 border border-gray-100 bg-gray-50 rounded-lg text-sm font-bold"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -134,8 +154,17 @@ export default function AdminFacultyAllocation() {
                                     </button>
                                     <button
                                         type="button"
+                                        onClick={handleRefresh}
+                                        disabled={loading}
+                                        className="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition disabled:opacity-50"
+                                    >
+                                        🔄
+                                    </button>
+                                    <button
+                                        type="button"
                                         onClick={handleFetchResults}
-                                        className="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition"
+                                        disabled={loading}
+                                        className="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition disabled:opacity-50"
                                     >
                                         👁️
                                     </button>
