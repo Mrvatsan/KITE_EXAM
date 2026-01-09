@@ -132,7 +132,6 @@ export default function AdminFacultyAllocation() {
                                             onChange={(e) => setDesignation(e.target.value)}
                                             className="w-full p-2 border border-gray-200 rounded-lg text-sm font-bold bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 disabled:opacity-50"
                                         >
-                                            <option value="Professor">Professor</option>
                                             <option value="Associate Professor">Associate Professor</option>
                                             <option value="Assistant Professor">Assistant Professor</option>
                                         </select>

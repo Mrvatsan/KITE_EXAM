@@ -82,5 +82,19 @@ export const getAllocatedFaculty = async (date: string, session: string) => {
   return api.get(`/api/faculty/admin/list/?date=${date}&session=${session}`);
 };
 
+export const requestAlternation = async (token: string, allocation_id: number, reason: string) => {
+  return api.post('/api/faculty/alternation/request/', { allocation_id, reason }, {
+    headers: { 'Authorization': `Token ${token}` }
+  });
+};
+
+export const getAdminAlternationRequests = async (status: string = 'PENDING') => {
+  return api.get(`/api/faculty/admin/alternation/requests/?status=${status}`);
+};
+
+export const approveAlternationRequest = async (request_id: number, action: string) => {
+  return api.post('/api/faculty/admin/alternation/approve/', { request_id, action });
+};
+
 export const default_api = api;
 export default api;

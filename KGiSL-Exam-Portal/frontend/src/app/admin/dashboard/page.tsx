@@ -129,6 +129,10 @@ export default function AdminDashboard() {
                         <button onClick={() => router.push('/admin/faculty-allocation')} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center gap-2 transition transform hover:-translate-y-1">
                             <span>👨‍🏫 Faculty Allocation</span>
                         </button>
+
+                        <button onClick={() => router.push('/admin/faculty-requests')} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center gap-2 transition transform hover:-translate-y-1">
+                            <span>🔄 Alternation Requests</span>
+                        </button>
                     </div>
                 </motion.div>
             </div>

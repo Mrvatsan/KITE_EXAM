@@ -58,8 +58,8 @@ export default function FacultyDashboard() {
                             <div className={`px-6 py-4 flex justify-between items-center ${duty.is_replaced ? 'bg-gray-200' : 'bg-indigo-600'} text-white`}>
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xl">🏛️</span>
-                                        <span className="font-bold text-lg">Hall {duty.hall_no}</span>
+                                        <span className="text-xl">{duty.is_replaced ? '🔄' : '🏛️'}</span>
+                                        <span className="font-bold text-lg">{duty.is_replaced ? 'Duty Reassigned' : `Hall ${duty.hall_no}`}</span>
                                     </div>
                                     <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest">{duty.exam_date}</span>
                                 </div>
@@ -76,13 +76,17 @@ export default function FacultyDashboard() {
                                 <hr className="border-gray-100" />
                                 <div className="space-y-2">
                                     <span className="text-gray-500 text-xs font-bold uppercase tracking-widest">Course Details</span>
-                                    <h3 className="text-xl font-bold text-gray-800 break-words">{duty.course_title}</h3>
-                                    <p className="text-indigo-600 font-mono font-bold text-sm">{duty.course_code}</p>
+                                    <h3 className="text-xl font-bold text-gray-800 break-words">
+                                        {duty.is_replaced ? 'REASSIGNED' : duty.course_title}
+                                    </h3>
+                                    {!duty.is_replaced && (
+                                        <p className="text-indigo-600 font-mono font-bold text-sm">{duty.course_code}</p>
+                                    )}
                                 </div>
 
                                 {duty.is_replaced && (
-                                    <div className="mt-4 bg-red-100 text-red-700 p-3 rounded-xl text-sm font-bold flex items-center gap-2">
-                                        <span>⚠️</span> This duty has been marked as unavailable.
+                                    <div className="mt-4 bg-amber-100 text-amber-700 p-3 rounded-xl text-xs font-bold flex items-center gap-2">
+                                        <span>ℹ️</span> Your assignment has been successfully reassigned.
                                     </div>
                                 )}
                             </div>

@@ -4,7 +4,8 @@ from .views import (
     AdminFacultyAllocationView, AdminFacultyListView,
     AdminFacultyConfirmView, AdminFacultyStatusView,
     FacultyDashboardView, FacultyStudentSeatingView, FacultyAllocationHistoryView,
-    FacultyAvailabilityUpdateView
+    FacultyAvailabilityUpdateView,
+    FacultyAlternationRequestView, AdminAlternationRequestListView, AdminAlternationApprovalView
 )
 
 urlpatterns = [
@@ -19,4 +20,7 @@ urlpatterns = [
     path('students/', FacultyStudentSeatingView.as_view(), name='faculty-students'),
     path('history/', FacultyAllocationHistoryView.as_view(), name='faculty-history'),
     path('availability/update/', FacultyAvailabilityUpdateView.as_view(), name='faculty-availability-update'),
+    path('alternation/request/', FacultyAlternationRequestView.as_view(), name='faculty-alternation-request'),
+    path('admin/alternation/requests/', AdminAlternationRequestListView.as_view(), name='admin-alternation-requests'),
+    path('admin/alternation/approve/', AdminAlternationApprovalView.as_view(), name='admin-alternation-approve'),
 ]

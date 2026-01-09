@@ -129,3 +129,35 @@ class FacultyToken(models.Model):
 
     def __str__(self):
         return f"Token for {self.faculty.name}"
+
+
+class FacultyAlternationRequest(models.Model):
+    """
+    Model for faculty members to request alternation for an assigned duty.
+    Requires admin approval.
+    """
+    PENDING = 'PENDING'
+    APPROVED = 'APPROVED'
+    REJECTED = 'REJECTED'
+    STATUS_CHOICES = [
+        (PENDING, 'Pending'),
+        (APPROVED, 'Approved'),
+        (REJECTED, 'Rejected'),
+    ]
+
+    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='alternation_requests')
+    allocation = models.ForeignKey(FacultyAllocation, on_delete=models.CASCADE, related_name='alternation_requests')
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    approved_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Faculty Alternation Request'
+        verbose_name_plural = 'Faculty Alternation Requests'
+        unique_together = [['faculty', 'allocation']]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Request by {self.faculty.name} for {self.allocation.hall_no} ({self.status})"

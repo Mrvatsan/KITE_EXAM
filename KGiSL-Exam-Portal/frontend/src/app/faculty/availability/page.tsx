@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { getFacultyDashboard, updateFacultyAvailability } from '../../api';
+import { getFacultyDashboard, requestAlternation } from '../../api';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function FacultyAvailability() {
@@ -42,8 +42,8 @@ export default function FacultyAvailability() {
         setMsg('');
 
         try {
-            await updateFacultyAvailability(token, selectedDuty.id, reason);
-            setMsg('Availability marked. A replacement from your department has been auto-assigned.');
+            await requestAlternation(token, selectedDuty.id, reason);
+            setMsg('Alternation request submitted. It will be reviewed by the admin for reassignment.');
             setReason('');
             setSelectedDuty(null);
             fetchActiveDuties(token);
@@ -89,8 +89,8 @@ export default function FacultyAvailability() {
                                 key={duty.id}
                                 onClick={() => setSelectedDuty(duty)}
                                 className={`w-full text-left p-6 rounded-2xl border-2 transition-all ${selectedDuty?.id === duty.id
-                                        ? 'border-indigo-600 bg-white shadow-lg ring-4 ring-indigo-50'
-                                        : 'border-gray-100 bg-gray-50 hover:border-gray-200'
+                                    ? 'border-indigo-600 bg-white shadow-lg ring-4 ring-indigo-50'
+                                    : 'border-gray-100 bg-gray-50 hover:border-gray-200'
                                     }`}
                             >
                                 <div className="flex justify-between items-start mb-2">
@@ -143,11 +143,11 @@ export default function FacultyAvailability() {
                                     disabled={submitting}
                                     className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition-all active:scale-95 disabled:bg-gray-300"
                                 >
-                                    {submitting ? 'Processing Replacement...' : 'Submit Request'}
+                                    {submitting ? 'Submitting Request...' : 'Request Alternation'}
                                 </button>
 
                                 <p className="text-[10px] text-gray-400 text-center font-medium px-4">
-                                    NOTIFICATION: By submitting, a replacement from your department will be automatically assigned. This action is final and auditable.
+                                    NOTIFICATION: Your request will be sent to the administrator for approval. If approved, a replacement will be assigned and your duty will be reassigned.
                                 </p>
                             </motion.form>
                         ) : (

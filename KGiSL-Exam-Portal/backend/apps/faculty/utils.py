@@ -24,16 +24,10 @@ def normalize_designation(designation):
         return 'ASSISTANT PROFESSOR'
     if d in ['ASSO.PROF', 'ASSOCIATE PROFESSOR']:
         return 'ASSOCIATE PROFESSOR'
-    if d in ['PROFESSOR', 'PROF']:
-        return 'PROFESSOR'
     
-    # Fallback/Fuzzy match for other common variations
-    if 'ASSISTANT' in d:
-        return 'ASSISTANT PROFESSOR'
-    if 'ASSOCIATE' in d:
-        return 'ASSOCIATE PROFESSOR'
-    if 'PROFESSOR' in d:
-        return 'PROFESSOR'
+    # Professor is no longer an allowed designation for allocation
+    # Fallback to a string that won't match any allowed designation
+    return "RESTRICTED"
         
     return d
 
@@ -120,10 +114,17 @@ def run_faculty_allocation(dept_counts, date, session, designation):
     dept_counts: dict { department_name: count }
     date: Date object
     session: string ('FN' or 'AN')
-    designation: string ('Professor', 'Associate Professor', 'Assistant Professor')
+    session: string ('FN' or 'AN')
+    designation: string ('Associate Professor', 'Assistant Professor')
     """
     from .models import FacultyAllocationStatus
     
+    # Defensive validation for restricted designations
+    allowed_designations = ['ASSISTANT PROFESSOR', 'ASSOCIATE PROFESSOR']
+    normalized_requested = normalize_designation(designation)
+    if normalized_requested not in allowed_designations:
+        raise ValueError(f"Selection of '{designation}' is not allowed. Please select Associate or Assistant Professor.")
+
     # 0. Check if already confirmed
     status_obj, _ = FacultyAllocationStatus.objects.get_or_create(exam_date=date, session=session)
     if status_obj.is_confirmed:
@@ -291,20 +292,24 @@ def confirm_faculty_allocation(date, session):
 
 
 @transaction.atomic
-def replace_faculty(allocation_id, reason):
+def replace_faculty(allocation_id, reason, update_rotation=False):
     """
     Emergency replacement logic.
     Identifies the next available faculty in the same department and reassigns the hall.
+    If update_rotation is True, the FacultyRotationState pointer is advanced to the new faculty.
     """
     allocation = FacultyAllocation.objects.select_for_update().get(id=allocation_id)
     if allocation.is_replaced:
         raise ValueError("This duty has already been replaced.")
-        
+    
+    dept_name = allocation.faculty.department
+    original_reg_no = allocation.faculty.register_no.strip().upper()
+    
+    df = get_faculty_sheet_data(dept_name)
     # Get the designation of the faculty being replaced
     faculty_row = df[df['register_no'].astype(str).str.strip().str.upper() == original_reg_no]
     if faculty_row.empty:
-         raise ValueError(f"Faculty {original_reg_no} not found in dataset for replacement.")
-    
+        raise ValueError(f"Original faculty {original_reg_no} not found in department {dept_name} data.")
     raw_designation = faculty_row.iloc[0]['designation']
     normalized_designation = normalize_designation(raw_designation)
     
@@ -354,14 +359,15 @@ def replace_faculty(allocation_id, reason):
                 replacement_faculty.set_password('Kite@123')
                 replacement_faculty.save()
             
-            # Update pointers? No, we won't move the main rotation pointer for an emergency replacement
-            # to keep the regular rotation fair for the 'next day'.
-            
             # Mark original as replaced
             allocation.is_replaced = True
             allocation.reason_for_unavailability = reason
             allocation.replaced_by = replacement_faculty
             allocation.save()
+
+            if update_rotation:
+                state.last_row_index = idx
+                state.save()
             
             # Create new allocation for replacement
             return FacultyAllocation.objects.create(
@@ -374,3 +380,80 @@ def replace_faculty(allocation_id, reason):
             )
             
     raise ValueError(f"No available replacement found in department {dept_name} for this session.")
+
+
+def request_alternation(faculty_reg_no, allocation_id, reason):
+    """
+    Submits an alternation request for a faculty member.
+    """
+    try:
+        faculty = Faculty.objects.get(register_no=faculty_reg_no.strip().upper())
+        allocation = FacultyAllocation.objects.get(id=allocation_id, faculty=faculty)
+        
+        # Check if already replaced or request exists
+        if allocation.is_replaced:
+            raise ValueError("This duty has already been reassigned.")
+            
+        # Check for existing pending request
+        existing = FacultyAlternationRequest.objects.filter(faculty=faculty, allocation=allocation).first()
+        if existing:
+            if existing.status == FacultyAlternationRequest.PENDING:
+                raise ValueError("You have already submitted a pending alternation request for this assignment.")
+            elif existing.status == FacultyAlternationRequest.APPROVED:
+                raise ValueError("This request has already been approved.")
+            # If rejected, they might want to re-submit with a better reason? 
+            # For now, let's allow unique_together to handle it or block it.
+            # User wants unique_together = (faculty, allocation) which I added.
+            # So they can't re-submit if a record exists.
+            raise ValueError(f"An alternation request already exists for this assignment (Status: {existing.status}).")
+            
+        request_obj = FacultyAlternationRequest.objects.create(
+            faculty=faculty,
+            allocation=allocation,
+            reason=reason
+        )
+             
+        return request_obj
+    except Faculty.DoesNotExist:
+        raise ValueError("Faculty not found.")
+    except FacultyAllocation.DoesNotExist:
+        raise ValueError("Allocation not found or does not belong to you.")
+
+
+@transaction.atomic
+def reject_alternation(request_id, admin_user):
+    """
+    Rejects an alternation request.
+    """
+    request_obj = FacultyAlternationRequest.objects.select_for_update().get(id=request_id)
+    if request_obj.status != FacultyAlternationRequest.PENDING:
+        raise ValueError(f"Request is already {request_obj.status}.")
+        
+    request_obj.status = FacultyAlternationRequest.REJECTED
+    request_obj.approved_by = admin_user
+    request_obj.save()
+    return request_obj
+
+
+@transaction.atomic
+def approve_alternation(request_id, admin_user):
+    """
+    Approves an alternation request and performs the replacement.
+    """
+    request_obj = FacultyAlternationRequest.objects.select_for_update().get(id=request_id)
+    if request_obj.status != FacultyAlternationRequest.PENDING:
+        raise ValueError(f"Request is already {request_obj.status}.")
+        
+    allocation = request_obj.allocation
+    
+    # Perform replacement using existing deterministic logic
+    # We update the rotation pointer here as requested by user
+    new_allocation = replace_faculty(allocation.id, request_obj.reason, update_rotation=True)
+    
+    # Update request status
+    request_obj.status = FacultyAlternationRequest.APPROVED
+    request_obj.approved_by = admin_user
+    request_obj.approved_at = timezone.now()
+    request_obj.save()
+    
+    return new_allocation

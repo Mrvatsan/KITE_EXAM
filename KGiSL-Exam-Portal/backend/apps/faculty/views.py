@@ -300,29 +300,35 @@ class FacultyDashboardView(APIView):
             from apps.exams.utils import resolve_hall_location
             
             for duty in duties:
-                # Visibility Gate: Check per date/session
-                # Only show if the global toggle for this slot is ON
-                # AND it is confirmed (implicitly true if in FacultyAllocationStatus with is_confirmed=True)
-                status_obj = FacultyAllocationStatus.objects.filter(
+                # Visibility Gate: Only show if the global toggle for this slot is ON
+                is_active = FacultyAllocationStatus.objects.filter(
                     exam_date=duty.exam_date, 
                     session=duty.session,
                     is_faculty_active=True
                 ).exists()
                 
-                if not status_obj:
+                if not is_active:
                     continue
 
                 location = resolve_hall_location(duty.hall_no)
-                data.append({
+                
+                # If duty is replaced, we show it as "Reassigned" without hall details
+                item = {
                     'id': duty.id,
-                    'hall_no': duty.hall_no,
-                    'course_code': duty.course_code,
-                    'course_title': duty.course_title,
                     'session': duty.session,
                     'exam_date': duty.exam_date.strftime('%Y-%m-%d'),
-                    'location': location,
                     'is_replaced': duty.is_replaced
-                })
+                }
+                
+                if not duty.is_replaced:
+                    item.update({
+                        'hall_no': duty.hall_no,
+                        'course_code': duty.course_code,
+                        'course_title': duty.course_title,
+                        'location': location,
+                    })
+                
+                data.append(item)
                 
             return Response(data)
             
@@ -364,6 +370,12 @@ class FacultyStudentSeatingView(APIView):
             if not assignment:
                 return Response(
                     {'error': 'No assignment found for this hall/session today.'}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            if assignment.is_replaced:
+                return Response(
+                    {'error': 'This assignment has been reassigned and is no longer accessible.'}, 
                     status=status.HTTP_403_FORBIDDEN
                 )
             
@@ -488,5 +500,94 @@ class FacultyAvailabilityUpdateView(APIView):
                 'replacement_faculty': new_allocation.faculty.name
             }, status=status.HTTP_200_OK)
             
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FacultyAlternationRequestView(APIView):
+    """
+    API for faculty members to submit an alternation request.
+    """
+    def post(self, request):
+        token_key = request.headers.get('Authorization')
+        if not token_key:
+             return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+             
+        try:
+            key = token_key.replace('Token ', '').strip()
+            token = FacultyToken.objects.get(key=key)
+            faculty = token.faculty
+            
+            allocation_id = request.data.get('allocation_id')
+            reason = request.data.get('reason')
+            
+            if not allocation_id or not reason:
+                 return Response({'error': 'Allocation ID and reason are required'}, status=status.HTTP_400_BAD_REQUEST)
+                 
+            from .utils import request_alternation
+            req_obj = request_alternation(faculty.register_no, allocation_id, reason)
+            
+            return Response({
+                'message': 'Alternation request submitted successfully and is pending admin approval.',
+                'request_id': req_obj.id
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminAlternationRequestListView(APIView):
+    """
+    API for admin to list faculty alternation requests.
+    """
+    def get(self, request):
+        from .models import FacultyAlternationRequest
+        status_filter = request.query_params.get('status', 'PENDING').upper()
+        
+        requests = FacultyAlternationRequest.objects.filter(status=status_filter).order_by('-created_at')
+        
+        data = []
+        for r in requests:
+            data.append({
+                'id': r.id,
+                'faculty_name': r.faculty.name,
+                'faculty_reg_no': r.faculty.register_no,
+                'department': r.faculty.department,
+                'hall_no': r.allocation.hall_no,
+                'exam_date': r.allocation.exam_date.strftime('%Y-%m-%d'),
+                'session': r.allocation.session,
+                'reason': r.reason,
+                'status': r.status,
+                'created_at': r.created_at.strftime('%Y-%m-%d %H:%M')
+            })
+        return Response(data)
+
+
+class AdminAlternationApprovalView(APIView):
+    """
+    API for admin to approve or reject a faculty alternation request.
+    """
+    def post(self, request):
+        request_id = request.data.get('request_id')
+        action = request.data.get('action') # 'APPROVE' or 'REJECT'
+        
+        if not request_id or not action:
+            return Response({'error': 'Request ID and action are required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            from .utils import approve_alternation, reject_alternation
+            from django.contrib.auth.models import User
+            # Simplified admin context for assignment
+            admin_user = User.objects.filter(is_superuser=True).first()
+            
+            if action.upper() == 'APPROVE':
+                approve_alternation(request_id, admin_user)
+                return Response({'message': 'Request approved and faculty reassigned successfully.'})
+            elif action.upper() == 'REJECT':
+                reject_alternation(request_id, admin_user)
+                return Response({'message': 'Request rejected.'})
+            else:
+                return Response({'error': 'Invalid action. Use APPROVE or REJECT.'}, status=status.HTTP_400_BAD_REQUEST)
+                
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
