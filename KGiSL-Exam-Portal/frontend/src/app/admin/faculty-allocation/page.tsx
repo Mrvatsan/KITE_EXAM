@@ -26,6 +26,8 @@ export default function AdminFacultyAllocation() {
         checkStatus();
     }, [date, session]);
 
+
+
     const checkStatus = async () => {
         try {
             const res = await getFacultyStatus(date, session);
@@ -35,6 +37,8 @@ export default function AdminFacultyAllocation() {
             console.error("Status check failed", err);
         }
     };
+
+
 
     const handleChange = (dept: string, val: string) => {
         setCounts({ ...counts, [dept]: parseInt(val) || 0 });
