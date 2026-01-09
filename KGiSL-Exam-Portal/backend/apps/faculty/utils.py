@@ -7,7 +7,35 @@ from django.utils import timezone
 from apps.exams.utils import normalize_department_name
 
 
-FACULTY_DATASET_PATH = r"D:\AFS\FACULTY_DATASET (3).xlsx"
+FACULTY_DATASET_PATH = r"D:\AFS\FACULTY_DATASET(MODIFIED).xlsx"
+
+def normalize_designation(designation):
+    """
+    Normalizes faculty designation to a canonical uppercase format.
+    Handles variations like 'ASST.PROF', 'Assistant Professor', etc.
+    """
+    if not designation:
+        return ""
+    
+    d = str(designation).strip().upper()
+    
+    # Mapping logic
+    if d in ['ASST.PROF', 'ASSISTANT PROFESSOR']:
+        return 'ASSISTANT PROFESSOR'
+    if d in ['ASSO.PROF', 'ASSOCIATE PROFESSOR']:
+        return 'ASSOCIATE PROFESSOR'
+    if d in ['PROFESSOR', 'PROF']:
+        return 'PROFESSOR'
+    
+    # Fallback/Fuzzy match for other common variations
+    if 'ASSISTANT' in d:
+        return 'ASSISTANT PROFESSOR'
+    if 'ASSOCIATE' in d:
+        return 'ASSOCIATE PROFESSOR'
+    if 'PROFESSOR' in d:
+        return 'PROFESSOR'
+        
+    return d
 
 def get_faculty_sheet_data(department):
     """
@@ -26,13 +54,21 @@ def get_faculty_sheet_data(department):
         'MECH': 'MECH',
         'CYS': 'CYS',
         'CSBS': 'CSBS',
-        'IT': 'IT', # IT was missing in my inspection but usually present
+        'IT': 'IT',
+        'S&H': 'S&H',
+        'SCIENCE & HUMANITIES': 'S&H',
+        'SCIENCE & HUMANITIES (PHYSICS)': 'S&H',
+        'SCIENCE & HUMANITIES (CHEMISTRY)': 'S&H',
+        'SCIENCE & HUMANITIES (MATHS)': 'S&H',
+        'SCIENCE & HUMANITIES (ENGLISH)': 'S&H',
     }
     
     # Try the canonical name first, then the mapped name
     try:
         xl = pd.ExcelFile(FACULTY_DATASET_PATH)
-        sheet_name = sheet_name_map.get(department, department)
+        # Normalize input department for lookup
+        dept_key = str(department).strip().upper()
+        sheet_name = sheet_name_map.get(dept_key, department)
         
         if sheet_name not in xl.sheet_names:
             # Fallback for IT if it's not present (sometimes it's under CSE or separate)
@@ -128,24 +164,30 @@ def run_faculty_allocation(dept_counts, date, session, designation):
             
         df = get_faculty_sheet_data(dept_name)
         
-        # Filter by designation
-        df = df[df['designation'].astype(str).str.strip().str.upper() == designation.strip().upper()]
+        # Filter by designation using normalization
+        normalized_requested = normalize_designation(designation)
+        df['normalized_designation'] = df['designation'].apply(normalize_designation)
+        df = df[df['normalized_designation'] == normalized_requested]
         total_rows = len(df)
         
+        if total_rows == 0:
+            raise ValueError(f"Dept {dept_name} has 0 {designation}s (Normalized: {normalized_requested}). Please check the dataset.")
+
         if total_rows < count:
             raise ValueError(f"Dept {dept_name} has only {total_rows} {designation}s, but {count} requested.")
             
-        # Get rotation state
+        # Get rotation state (Normalized designation used for state tracking)
         state, created = FacultyRotationState.objects.get_or_create(
             department=dept_name, 
-            designation=designation
+            designation=normalized_requested
         )
         
         # Pointer logic (Bottom-up selection):
         # We start from the bottom if last_row_index is -1, 
         # picking 'count' rows sequentially upwards.
-        if state.last_row_index == -1:
-            # If never allocated, start from the bottom-most possible subset
+        if state.last_row_index == -1 or state.last_row_index >= total_rows:
+            # If never allocated OR index is now invalid due to dataset change, 
+            # start from the bottom-most possible subset
             start_index = (total_rows - count) % total_rows
         else:
             # If previous allocation exists, start from the next one upwards
@@ -224,17 +266,21 @@ def confirm_faculty_allocation(date, session):
         designation = faculty_row.iloc[0]['designation']
         
         # Filter df to relevant designation the same way allocation does
-        designation_df = df[df['designation'].astype(str).str.strip().str.upper() == designation.strip().upper()].reset_index(drop=True)
+        normalized_fac_designation = normalize_designation(faculty_row.iloc[0]['designation'])
+        df['normalized_designation'] = df['designation'].apply(normalize_designation)
+        designation_df = df[df['normalized_designation'] == normalized_fac_designation].reset_index(drop=True)
         
         # Find new index
         new_row_idx_search = designation_df[designation_df['register_no'].astype(str).str.strip().str.upper() == alloc.faculty.register_no.strip().upper()]
         if not new_row_idx_search.empty:
             new_idx = new_row_idx_search.index[0]
-            state, _ = FacultyRotationState.objects.get_or_create(department=dept, designation=designation)
-            # We want to set the pointer to the MAX index touched in this batch for this dept/designation
-            if new_idx > state.last_row_index or True: # Force update to the last one processed
-                 state.last_row_index = new_idx
-                 state.save()
+            state, _ = FacultyRotationState.objects.get_or_create(
+                department=dept, 
+                designation=normalized_fac_designation
+            )
+            # We want to set the pointer to the last index touched
+            state.last_row_index = new_idx
+            state.save()
 
     # Mark all as confirmed
     allocations.update(is_confirmed=True)
@@ -254,20 +300,39 @@ def replace_faculty(allocation_id, reason):
     if allocation.is_replaced:
         raise ValueError("This duty has already been replaced.")
         
-    dept_name = allocation.faculty.department
-    df = get_faculty_sheet_data(dept_name)
-    total_rows = len(df)
+    # Get the designation of the faculty being replaced
+    faculty_row = df[df['register_no'].astype(str).str.strip().str.upper() == original_reg_no]
+    if faculty_row.empty:
+         raise ValueError(f"Faculty {original_reg_no} not found in dataset for replacement.")
     
-    state, _ = FacultyRotationState.objects.get_or_create(department=dept_name)
+    raw_designation = faculty_row.iloc[0]['designation']
+    normalized_designation = normalize_designation(raw_designation)
+    
+    # Filter df by the same normalized designation
+    df['normalized_designation'] = df['designation'].apply(normalize_designation)
+    designation_df = df[df['normalized_designation'] == normalized_designation].reset_index(drop=True)
+    total_designation_rows = len(designation_df)
+    
+    if total_designation_rows <= 1:
+        raise ValueError(f"No other {normalized_designation}s found in {dept_name} for replacement.")
+    
+    state, _ = FacultyRotationState.objects.get_or_create(
+        department=dept_name, 
+        designation=normalized_designation
+    )
+    
+    # Safety check for index
+    current_idx = state.last_row_index
+    if current_idx == -1 or current_idx >= total_designation_rows:
+        current_idx = 0
     
     found_replacement = None
-    original_reg_no = allocation.faculty.register_no
     
     # Search for first faculty from current pointer onwards who is available
-    for i in range(1, total_rows): 
-        idx = (state.last_row_index + i) % total_rows
-        row = df.iloc[idx]
-        reg_no = str(row['register_no'])
+    for i in range(1, total_designation_rows): 
+        idx = (current_idx + i) % total_designation_rows
+        row = designation_df.iloc[idx]
+        reg_no = str(row['register_no']).strip().upper()
         
         if reg_no == original_reg_no:
             continue
