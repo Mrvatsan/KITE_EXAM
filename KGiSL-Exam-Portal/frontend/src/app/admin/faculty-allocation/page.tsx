@@ -10,7 +10,9 @@ export default function AdminFacultyAllocation() {
     });
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [session, setSession] = useState('FN');
-    const [designation, setDesignation] = useState('Assistant Professor');
+    const [designation, setDesignation] = useState("");
+    const DESIGNATION_OPTIONS = ["Assistant Professor", "Associate Professor"];
+    const isDesignationValid = DESIGNATION_OPTIONS.includes(designation);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [results, setResults] = useState<any[]>([]);
@@ -132,8 +134,10 @@ export default function AdminFacultyAllocation() {
                                             onChange={(e) => setDesignation(e.target.value)}
                                             className="w-full p-2 border border-gray-200 rounded-lg text-sm font-bold bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 disabled:opacity-50"
                                         >
-                                            <option value="Associate Professor">Associate Professor</option>
-                                            <option value="Assistant Professor">Assistant Professor</option>
+                                            <option value="">-- Select Designation --</option>
+                                            {DESIGNATION_OPTIONS.map(opt => (
+                                                <option key={opt} value={opt}>{opt}</option>
+                                            ))}
                                         </select>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
@@ -164,14 +168,14 @@ export default function AdminFacultyAllocation() {
                                         <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                                             {Object.keys(counts).map(dept => (
                                                 <div key={dept} className="flex flex-col">
-                                                    <span className="text-[10px] font-bold text-gray-500 mb-1">{dept}</span>
+                                                    <span className={`text-[10px] font-bold mb-1 ${!isDesignationValid ? 'text-gray-300' : 'text-gray-500'}`}>{dept}</span>
                                                     <input
                                                         type="number"
                                                         min="0"
-                                                        disabled={isConfirmed}
+                                                        disabled={isConfirmed || !isDesignationValid}
                                                         value={counts[dept]}
                                                         onChange={(e) => handleChange(dept, e.target.value)}
-                                                        className="w-full p-2 border border-gray-100 bg-gray-50 rounded-lg text-sm font-bold disabled:opacity-50"
+                                                        className="w-full p-2 border border-gray-100 bg-gray-50 rounded-lg text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                                                     />
                                                 </div>
                                             ))}
@@ -185,7 +189,7 @@ export default function AdminFacultyAllocation() {
                                     <div className="flex gap-3">
                                         <button
                                             type="submit"
-                                            disabled={loading || isConfirmed}
+                                            disabled={loading || isConfirmed || !isDesignationValid}
                                             className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all active:scale-95 disabled:bg-gray-300"
                                         >
                                             {loading ? 'Processing...' : isConfirmed ? 'Locked' : 'Allocate Now'}

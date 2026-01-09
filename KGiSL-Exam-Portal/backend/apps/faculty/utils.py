@@ -11,25 +11,27 @@ FACULTY_DATASET_PATH = r"D:\AFS\FACULTY_DATASET(MODIFIED).xlsx"
 
 def normalize_designation(designation):
     """
-    Normalizes faculty designation to a canonical uppercase format.
-    Handles variations like 'ASST.PROF', 'Assistant Professor', etc.
+    Normalizes faculty designation to a canonical format.
+    Strictly allows only Assistant Professor and Associate Professor.
     """
     if not designation:
         return ""
     
-    d = str(designation).strip().upper()
-    
-    # Mapping logic
-    if d in ['ASST.PROF', 'ASSISTANT PROFESSOR']:
-        return 'ASSISTANT PROFESSOR'
-    if d in ['ASSO.PROF', 'ASSOCIATE PROFESSOR']:
-        return 'ASSOCIATE PROFESSOR'
-    
-    # Professor is no longer an allowed designation for allocation
-    # Fallback to a string that won't match any allowed designation
-    return "RESTRICTED"
-        
-    return d
+    mapping = {
+        "assistant professor": "ASSISTANT PROFESSOR",
+        "asst.prof": "ASSISTANT PROFESSOR",
+        "associate professor": "ASSOCIATE PROFESSOR",
+        "asso.prof": "ASSOCIATE PROFESSOR",
+    }
+
+    key = str(designation).strip().lower()
+    if key not in mapping:
+        # Fallback for already normalized uppercase values in DB/Excel
+        if key.upper() in ["ASSISTANT PROFESSOR", "ASSOCIATE PROFESSOR"]:
+            return key.upper()
+        raise ValueError(f"Invalid designation: {designation}")
+
+    return mapping[key]
 
 def get_faculty_sheet_data(department):
     """
