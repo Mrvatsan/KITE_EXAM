@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     LoginView, DatasetUploadView, DatasetListView, 
     ToggleDatasetView, DeleteStudentsView,
-    HallTicketView
+    HallTicketView, AvailableExamDatesView
 )
 
 urlpatterns = [
@@ -14,4 +14,7 @@ urlpatterns = [
     
     # Hall Ticket endpoint (student-only)
     path('hall-ticket/', HallTicketView.as_view(), name='hall-ticket'),
+    
+    # Available exam dates for faculty allocation
+    path('available-dates/', AvailableExamDatesView.as_view(), name='available-dates'),
 ]
