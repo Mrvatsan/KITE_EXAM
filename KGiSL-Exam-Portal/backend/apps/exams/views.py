@@ -266,3 +266,41 @@ class HallTicketView(APIView):
             },
             'semesters': semesters_data
         }, status=status.HTTP_200_OK)
+
+
+class AvailableExamDatesView(APIView):
+    """
+    Returns all available exam dates and sessions from the active dataset.
+    Useful for faculty allocation to know which dates can be allocated.
+    """
+    def get(self, request):
+        active_dataset = Dataset.objects.filter(is_active=True).first()
+        
+        if not active_dataset:
+            return Response({
+                'available_dates': [],
+                'message': 'No active dataset found'
+            }, status=status.HTTP_200_OK)
+        
+        # Get all unique date-session combinations
+        dates_sessions = Student.objects.filter(dataset=active_dataset)\
+            .values('exam_date', 'session').distinct().order_by('exam_date', 'session')
+        
+        available_dates = []
+        for ds in dates_sessions:
+            hall_count = Student.objects.filter(
+                dataset=active_dataset,
+                exam_date=ds['exam_date'],
+                session=ds['session']
+            ).values('hall_no').distinct().count()
+            
+            available_dates.append({
+                'date': ds['exam_date'].strftime('%Y-%m-%d'),
+                'session': ds['session'],
+                'halls': hall_count
+            })
+        
+        return Response({
+            'available_dates': available_dates,
+            'total_count': len(available_dates)
+        }, status=status.HTTP_200_OK)
