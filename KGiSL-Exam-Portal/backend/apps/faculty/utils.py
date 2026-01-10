@@ -149,7 +149,15 @@ def run_faculty_allocation(dept_counts, date, session, designation):
     # 3. Validation: sum(counts) == number_of_unique_halls
     requested_total = sum(dept_counts.values())
     if total_halls == 0:
-        raise ValueError(f"No exam halls found for {date} ({session}).")
+        # Get available dates to show user
+        available_dates = Student.objects.filter(dataset=active_dataset)\
+            .values('exam_date', 'session').distinct().order_by('exam_date', 'session')
+        
+        if available_dates.exists():
+            dates_str = ', '.join([f"{d['exam_date']} ({d['session']})" for d in available_dates[:5]])
+            raise ValueError(f"No exam halls found for {date} ({session}). Available dates in dataset: {dates_str}")
+        else:
+            raise ValueError(f"No exam halls found for {date} ({session}). The active dataset appears to be empty.")
     
     if requested_total != total_halls:
         raise ValueError(f"Validation failed: Sum of faculty counts ({requested_total}) must equal number of halls ({total_halls}).")
