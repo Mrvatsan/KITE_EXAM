@@ -17,6 +17,7 @@ export default function AdminFacultyAllocation() {
     const [error, setError] = useState('');
     const [results, setResults] = useState<any[]>([]);
     const [isConfirmed, setIsConfirmed] = useState(false);
+    const [hasExistingAllocation, setHasExistingAllocation] = useState(false);
     const [isFacultyActive, setIsFacultyActive] = useState(false);
     const router = useRouter();
 
@@ -31,10 +32,17 @@ export default function AdminFacultyAllocation() {
     const checkStatus = async () => {
         try {
             const res = await getFacultyStatus(date, session);
-            setIsConfirmed(res.data.is_confirmed);
-            setIsFacultyActive(res.data.is_faculty_active);
+            setIsConfirmed(res.data.is_confirmed || false);
+            setIsFacultyActive(res.data.is_faculty_active || false);
+            
+            // Check if there's existing allocation data
+            const allocRes = await getAllocatedFaculty(date, session);
+            setHasExistingAllocation(allocRes.data && allocRes.data.length > 0);
         } catch (err) {
             console.error("Status check failed", err);
+            setIsConfirmed(false);
+            setIsFacultyActive(false);
+            setHasExistingAllocation(false);
         }
     };
 
@@ -133,7 +141,7 @@ export default function AdminFacultyAllocation() {
                                     <div>
                                         <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Designation</label>
                                         <select
-                                            disabled={isConfirmed}
+                                            disabled={isConfirmed && hasExistingAllocation}
                                             value={designation}
                                             onChange={(e) => setDesignation(e.target.value)}
                                             className="w-full p-2 border border-gray-200 rounded-lg text-sm font-bold bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 disabled:opacity-50"
@@ -176,7 +184,7 @@ export default function AdminFacultyAllocation() {
                                                     <input
                                                         type="number"
                                                         min="0"
-                                                        disabled={isConfirmed || !isDesignationValid}
+                                                        disabled={(isConfirmed && hasExistingAllocation) || !isDesignationValid}
                                                         value={counts[dept]}
                                                         onChange={(e) => handleChange(dept, e.target.value)}
                                                         className="w-full p-2 border border-gray-100 bg-gray-50 rounded-lg text-sm font-bold disabled:opacity-30 disabled:cursor-not-allowed"
@@ -193,15 +201,15 @@ export default function AdminFacultyAllocation() {
                                     <div className="flex gap-3">
                                         <button
                                             type="submit"
-                                            disabled={loading || isConfirmed || !isDesignationValid}
+                                            disabled={loading || (isConfirmed && hasExistingAllocation) || !isDesignationValid}
                                             className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all active:scale-95 disabled:bg-gray-300"
                                         >
-                                            {loading ? 'Processing...' : isConfirmed ? 'Locked' : 'Allocate Now'}
+                                            {loading ? 'Processing...' : (isConfirmed && hasExistingAllocation) ? 'Locked' : 'Allocate Now'}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={handleRefresh}
-                                            disabled={loading || isConfirmed}
+                                            disabled={loading || (isConfirmed && hasExistingAllocation)}
                                             className="px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition disabled:opacity-50"
                                         >
                                             🔄
