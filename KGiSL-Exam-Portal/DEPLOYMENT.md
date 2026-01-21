@@ -1,7 +1,7 @@
 # Deployment Guide - Exam Portal Management System on Render
 
 ## Prerequisites
-- GitHub account with repository: `https://github.com/Vignesh5432/Exam_Portal_Management.git`
+- GitHub account with repository: `https://github.com/Mrvatsan/Admin_Faculty_Student.git`
 - Render account (sign up at https://render.com)
 
 ## Deployment Steps
