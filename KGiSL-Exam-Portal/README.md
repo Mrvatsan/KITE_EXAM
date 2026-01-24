@@ -24,21 +24,26 @@ KGiSL Institute of Technology - Exam Management System
 - Framer Motion
 - Axios
 
+## Maintainers
+
+- **Faculty-In-Charge**: Admin Team
+- **Technical Lead**: Dev Team
+
 ## Project Structure
 
 ```
-exam-portal/
-├── backend/              # Django backend
-│   ├── manage.py
-│   ├── backend/         # Django project settings
-│   ├── apps/            # Django apps (core, exams)
-│   ├── datasets/        # Uploaded Excel files
-│   ├── scripts/         # Utility scripts
-│   └── requirements.txt
-└── frontend/            # Next.js frontend
-    ├── src/app/
-    ├── public/
-    └── package.json
+30: exam-portal/
+31: ├── backend/              # Django backend service
+32: │   ├── manage.py         # Entry point for administrative tasks
+33: │   ├── backend/          # Project-level configuration and settings
+34: │   ├── apps/             # Application modules (core, exams, faculty)
+35: │   ├── datasets/         # Storage for uploaded Excel seating plans
+36: │   ├── scripts/          # Utility and maintenance scripts
+37: │   └── requirements.txt  # Python dependency list
+38: └── frontend/             # Next.js frontend application
+39:     ├── src/app/          # Page routes and components
+40:     ├── public/           # Static assets (images, icons)
+41:     └── package.json      # Node.js dependencies and scripts
 ```
 
 ## Installation
@@ -85,5 +90,14 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed Render deployment instructions.
 
 ## License
 
-© 2025 KGiSL Institute of Technology
+
+## Contribution Guidelines
+
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/name`).
+3. Commit your changes (`git commit -m "feat: add new feature"`).
+4. Push to the branch (`git push origin feature/name`).
+5. Open a Pull Request.
+
+Please ensure all tests pass before submitting.
 
