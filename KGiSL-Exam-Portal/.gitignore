@@ -33,6 +33,7 @@ coverage.xml
 .coverage
 db.sqlite3
 *.log
+backend/datasets/queryoutput_*.xls
 
 # Django
 *.log
