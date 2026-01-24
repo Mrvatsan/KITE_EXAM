@@ -1,6 +1,9 @@
 from django.db import models
 
 class Dataset(models.Model):
+    """
+    Represents an uploaded dataset file containing student or exam information.
+    """
     file = models.FileField(upload_to='datasets/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=False)
@@ -9,6 +12,9 @@ class Dataset(models.Model):
         return f"Dataset {self.id} - {self.uploaded_at.strftime('%Y-%m-%d %H:%M')}"
 
 class Student(models.Model):
+    """
+    Represents a student record associated with a dataset, including exam details.
+    """
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='students')
     register_no = models.CharField(max_length=50)
     name = models.CharField(max_length=100)
@@ -35,7 +41,7 @@ class Student(models.Model):
 class HallTicketExam(models.Model):
     """
     Stores exam schedule data for hall tickets.
-    Data is organized by department and semester.
+    Data is organized by department, semester, and course details.
     """
     department = models.CharField(max_length=50)  # AI&ML, AI&DS, CSE, ECE, IT, MECH, R&A, CSBS, CYS
     semester = models.CharField(max_length=10)    # I, II, III, IV, V, VI, VII, VIII
