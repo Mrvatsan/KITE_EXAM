@@ -9,6 +9,9 @@ from django.utils import timezone
 import pandas as pd
 
 class LoginView(APIView):
+    """
+    Handles authentication for both Admins and Students.
+    """
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
@@ -66,6 +69,10 @@ class LoginView(APIView):
 
 
 class DatasetUploadView(APIView):
+    """
+    Handles file uploads for exam datasets (e.g. seating plans).
+    Parses Excel files and populates database.
+    """
     def post(self, request):
         # Only allow simpler validation for now (assume admin checks handled via token or session, but for quick prototype we skip strict auth check here or add simple one if needed)
         # For full security we'd check headers.
@@ -147,6 +154,10 @@ class DatasetUploadView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class DatasetListView(APIView):
+    """
+    Lists all uploaded datasets with metadata.
+    Includes student count for each dataset.
+    """
     def get(self, request):
         datasets = Dataset.objects.all().order_by('-uploaded_at')
         data = []
@@ -160,6 +171,10 @@ class DatasetListView(APIView):
         return Response(data)
 
 class ToggleDatasetView(APIView):
+    """
+    Toggles the active status of a dataset.
+    Only one dataset can be active at a time; others are deactivated.
+    """
     def post(self, request, pk):
         try:
             dataset = Dataset.objects.get(pk=pk)
@@ -175,6 +190,10 @@ class ToggleDatasetView(APIView):
             return Response({'error': 'Dataset not found'}, status=status.HTTP_404_NOT_FOUND)
 
 class DeleteStudentsView(APIView):
+    """
+    Clears all datasets and student records from the database.
+    This is a destructive action used for system reset.
+    """
     def delete(self, request):
         Dataset.objects.all().delete() # Cascades to students
         return Response({'message': 'All data cleared'})
@@ -275,11 +294,13 @@ class AvailableExamDatesView(APIView):
     """
     def get(self, request):
         active_dataset = Dataset.objects.filter(is_active=True).first()
-        
+        if not active_dataset:
+            active_dataset = Dataset.objects.order_by('-uploaded_at').first()
+            
         if not active_dataset:
             return Response({
                 'available_dates': [],
-                'message': 'No active dataset found'
+                'message': 'No dataset found. Please upload a seating plan first.'
             }, status=status.HTTP_200_OK)
         
         # Get all unique date-session combinations
