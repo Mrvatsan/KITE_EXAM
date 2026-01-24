@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from .models import Faculty, FacultyAllocation, FacultyRotationState
+from .models import Faculty, FacultyAllocation, FacultyRotationState, FacultyAlternationRequest
 from apps.exams.models import Student, Dataset
 from django.db import transaction
 from django.utils import timezone
@@ -12,26 +12,35 @@ FACULTY_DATASET_PATH = r"D:\AFS\FACULTY_DATASET(MODIFIED).xlsx"
 def normalize_designation(designation):
     """
     Normalizes faculty designation to a canonical format.
-    Strictly allows only Assistant Professor and Associate Professor.
+    Handles extra spaces, dots, and common typos.
+    Canonical Output: ASST.PROF, ASSO.PROF, PROFESSOR.
     """
     if not designation:
         return ""
     
-    mapping = {
-        "assistant professor": "ASSISTANT PROFESSOR",
-        "asst.prof": "ASSISTANT PROFESSOR",
-        "associate professor": "ASSOCIATE PROFESSOR",
-        "asso.prof": "ASSOCIATE PROFESSOR",
-    }
+    # 1. Basic cleaning: lowercase, strip, and remove all interior spaces
+    raw = str(designation).strip().lower()
+    # Remove all spaces and dots for comparison
+    clean = raw.replace(' ', '').replace('.', '')
+    
+    # 2. Map cleaned versions to canonical forms
+    if any(x in clean for x in ['assistant', 'asst', 'ast', 'rpof']): # 'rpof' handles 'asst.rpof'
+        return "ASST.PROF"
+    
+    if any(x in clean for x in ['associate', 'asso', 'aso']):
+        return "ASSO.PROF"
+    
+    if 'professor' in clean or 'prof' in clean:
+        # Check this after assistant/associate to avoid false positives
+        return "PROFESSOR"
+    
+    # 3. Final fallback: If it's already a known short form (no dots/spaces)
+    if clean.upper() in ["ASSTPROF", "ASSOPROF", "PROFESSOR"]:
+        if clean.upper() == "ASSTPROF": return "ASST.PROF"
+        if clean.upper() == "ASSOPROF": return "ASSO.PROF"
+        return "PROFESSOR"
 
-    key = str(designation).strip().lower()
-    if key not in mapping:
-        # Fallback for already normalized uppercase values in DB/Excel
-        if key.upper() in ["ASSISTANT PROFESSOR", "ASSOCIATE PROFESSOR"]:
-            return key.upper()
-        raise ValueError(f"Invalid designation: {designation}")
-
-    return mapping[key]
+    raise ValueError(f"Invalid designation: {designation}")
 
 def get_faculty_sheet_data(department):
     """
@@ -41,7 +50,6 @@ def get_faculty_sheet_data(department):
         raise FileNotFoundError(f"Faculty dataset not found at {FACULTY_DATASET_PATH}")
     
     # Map canonical department name to sheet name if they differ
-    # Based on inspection: ['AIML', 'CYS', 'AIDS', 'CSE', 'MECH', 'ECE', 'CSBS', 'MBA', 'S&H']
     sheet_name_map = {
         'AI&ML': 'AIML',
         'AI&DS': 'AIDS',
@@ -57,6 +65,9 @@ def get_faculty_sheet_data(department):
         'SCIENCE & HUMANITIES (CHEMISTRY)': 'S&H',
         'SCIENCE & HUMANITIES (MATHS)': 'S&H',
         'SCIENCE & HUMANITIES (ENGLISH)': 'S&H',
+        'BE CSE CYS': 'CYS', # Handle specific variant
+        'B.TECH IT': 'IT',
+        'INFORMATION TECHNOLOGY': 'IT',
     }
     
     # Try the canonical name first, then the mapped name
@@ -67,15 +78,25 @@ def get_faculty_sheet_data(department):
         sheet_name = sheet_name_map.get(dept_key, department)
         
         if sheet_name not in xl.sheet_names:
-            # Fallback for IT if it's not present (sometimes it's under CSE or separate)
-            if department == 'IT' and 'IT' not in xl.sheet_names:
-                 # Check if there's any sheet that looks like IT
-                 potential = [s for s in xl.sheet_names if 'IT' in s]
-                 if potential:
-                     sheet_name = potential[0]
+            # Robust fallback: check if any Excel sheet name is contained within the department string
+            # OR if the department string contains any Excel sheet name
+            # e.g., "BE CSE CyS" contains "CYS"
+            clean_dept = dept_key.replace(' ', '').replace('&', '')
+            for s in xl.sheet_names:
+                clean_s = s.upper().replace(' ', '').replace('&', '')
+                if clean_s in clean_dept or clean_dept in clean_s:
+                    sheet_name = s
+                    break
             
             if sheet_name not in xl.sheet_names:
-                raise ValueError(f"Sheet for department '{department}' not found in Excel.")
+                # Fallback for IT if it's not present
+                if department == 'IT' and 'IT' not in xl.sheet_names:
+                     potential = [s for s in xl.sheet_names if 'IT' in s]
+                     if potential:
+                         sheet_name = potential[0]
+                
+                if sheet_name not in xl.sheet_names:
+                    raise ValueError(f"Sheet for department '{department}' not found in Excel. Available: {', '.join(xl.sheet_names)}")
         
         df = pd.read_excel(FACULTY_DATASET_PATH, sheet_name=sheet_name)
         
@@ -122,10 +143,10 @@ def run_faculty_allocation(dept_counts, date, session, designation):
     from .models import FacultyAllocationStatus
     
     # Defensive validation for restricted designations
-    allowed_designations = ['ASSISTANT PROFESSOR', 'ASSOCIATE PROFESSOR']
+    allowed_designations = ['ASST.PROF', 'ASSO.PROF', 'PROFESSOR']
     normalized_requested = normalize_designation(designation)
     if normalized_requested not in allowed_designations:
-        raise ValueError(f"Selection of '{designation}' is not allowed. Please select Associate or Assistant Professor.")
+        raise ValueError(f"Selection of '{designation}' is not allowed. Please select Professor, Associate or Assistant Professor.")
 
     # 0. Check if already confirmed
     status_obj, _ = FacultyAllocationStatus.objects.get_or_create(exam_date=date, session=session)
@@ -135,10 +156,13 @@ def run_faculty_allocation(dept_counts, date, session, designation):
     # 1. Clear existing unconfirmed allocations for this date and session
     FacultyAllocation.objects.filter(exam_date=date, session=session, is_confirmed=False).delete()
 
-    # 2. Get unique halls from active dataset
+    # 2. Get target dataset (Latest uploaded, even if not active)
     active_dataset = Dataset.objects.filter(is_active=True).first()
     if not active_dataset:
-        raise ValueError("No active student dataset found.")
+        active_dataset = Dataset.objects.order_by('-uploaded_at').first()
+        
+    if not active_dataset:
+        raise ValueError("No seating plan dataset found. Please upload one first.")
         
     unique_halls = Student.objects.filter(dataset=active_dataset, exam_date=date, session=session)\
         .values_list('hall_no', flat=True).distinct().order_by('hall_no')

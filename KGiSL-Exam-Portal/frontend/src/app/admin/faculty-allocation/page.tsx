@@ -11,7 +11,7 @@ export default function AdminFacultyAllocation() {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [session, setSession] = useState('FN');
     const [designation, setDesignation] = useState("");
-    const DESIGNATION_OPTIONS = ["Assistant Professor", "Associate Professor"];
+    const DESIGNATION_OPTIONS = ["Assistant Professor", "Associate Professor", "Professor"];
     const isDesignationValid = DESIGNATION_OPTIONS.includes(designation);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -34,7 +34,7 @@ export default function AdminFacultyAllocation() {
             const res = await getFacultyStatus(date, session);
             setIsConfirmed(res.data.is_confirmed || false);
             setIsFacultyActive(res.data.is_faculty_active || false);
-            
+
             // Check if there's existing allocation data
             const allocRes = await getAllocatedFaculty(date, session);
             setHasExistingAllocation(allocRes.data && allocRes.data.length > 0);
@@ -240,6 +240,7 @@ export default function AdminFacultyAllocation() {
                                             <div className="flex justify-between items-center">
                                                 <span className="text-xs font-bold text-indigo-900 uppercase">Faculty Visibility</span>
                                                 <button
+                                                    type="button"
                                                     onClick={() => handleToggleActive(!isFacultyActive)}
                                                     className={`px-3 py-1 rounded-full text-[10px] font-black uppercase transition-colors ${isFacultyActive ? 'bg-emerald-500 text-white' : 'bg-gray-300 text-gray-600'
                                                         }`}
