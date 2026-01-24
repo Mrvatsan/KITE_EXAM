@@ -4,7 +4,8 @@ from django.contrib.auth.hashers import make_password, check_password
 
 class Faculty(models.Model):
     """
-    Faculty model for storing faculty member details.
+    Represents a faculty member eligible for exam duty.
+    Stores authentication credentials and departmental affiliation.
     Passwords are hashed using Django's password hashing utilities.
     """
     name = models.CharField(max_length=100)
@@ -32,6 +33,7 @@ class Faculty(models.Model):
 class FacultyAllocation(models.Model):
     """
     Tracks faculty-to-hall assignments for specific exam dates and sessions.
+    Manages replacement logic via `is_replaced` and `replaced_by` fields.
     Enforces uniqueness: one faculty can only have one assignment per date-session.
     """
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='allocations')
