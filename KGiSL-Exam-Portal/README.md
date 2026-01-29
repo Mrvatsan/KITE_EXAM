@@ -7,6 +7,7 @@ KGiSL Institute of Technology - Exam Management System
 - **Admin Dashboard**: Upload seating plans, manage datasets, toggle active exams
 - **Student Portal**: View hall seating details, exam information
 - **Excel Upload**: Supports both .xls and .xlsx formats, including corrupted database exports
+- **Faculty Management**: Sync faculty data from Google Sheets, automated allocation
 - **Mobile Responsive**: Works seamlessly on all devices
 
 ## Tech Stack
