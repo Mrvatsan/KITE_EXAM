@@ -193,5 +193,19 @@ export const approveAlternationRequest = async (request_id: number, action: stri
   return api.post('/api/faculty/admin/alternation/approve/', { request_id, action });
 };
 
+/**
+ * Opens the Faculty.xlsx file on the server.
+ */
+export const openFacultyExcel = async () => {
+  return api.post('/api/faculty/admin/open-excel/');
+};
+
+/**
+ * Syncs the Faculty.xlsx file content back to the database.
+ */
+export const syncFacultyExcel = async () => {
+  return api.post('/api/faculty/admin/sync-excel/');
+};
+
 export const default_api = api;
 export default api;
