@@ -121,6 +121,7 @@ ALLOWED_HOSTS=exam-portal-backend.onrender.com,your-custom-domain.com
 DATABASE_URL=postgresql://user:password@host:port/database
 CORS_ALLOWED_ORIGINS=https://exam-portal-frontend.onrender.com
 PYTHON_VERSION=3.11.0
+GOOGLE_CREDENTIALS={"type": "service_account", ...} (JSON string)
 ```
 
 ### Frontend Environment Variables
