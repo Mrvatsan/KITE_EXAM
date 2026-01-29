@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { uploadDataset, getDatasets, toggleDataset, deleteStudents } from '../../api';
+import { uploadDataset, getDatasets, toggleDataset, deleteStudents, openFacultyExcel, syncFacultyExcel } from '../../api';
 import { motion } from 'framer-motion';
 
 export default function AdminDashboard() {
@@ -61,6 +61,41 @@ export default function AdminDashboard() {
             } finally {
                 setLoading(false);
             }
+        }
+    };
+
+    const handleOpenExcel = async () => {
+        setLoading(true);
+        setMsg('Opening Google Sheet...');
+        try {
+            const res = await openFacultyExcel();
+            setMsg('');
+            if (res.data.url) {
+                window.open(res.data.url, '_blank');
+            } else {
+                alert('No URL returned');
+            }
+        } catch (err: any) {
+            setMsg('');
+            alert('Failed to open Excel: ' + (err.response?.data?.error || err.message));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSyncExcel = async () => {
+        setLoading(true);
+        setMsg('Syncing Database...');
+        try {
+            const res = await syncFacultyExcel();
+            setMsg('');
+            const stats = res.data.stats;
+            alert(`Sync Complete!\nCreated: ${stats.created}\nUpdated: ${stats.updated}\nDeleted: ${stats.deleted}`);
+        } catch (err: any) {
+            setMsg('');
+            alert('Sync failed: ' + (err.response?.data?.error || err.message));
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -129,6 +164,15 @@ export default function AdminDashboard() {
                         <button onClick={() => router.push('/admin/faculty-allocation')} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center gap-2 transition transform hover:-translate-y-1">
                             <span>👨‍🏫 Faculty Allocation</span>
                         </button>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <button onClick={handleOpenExcel} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center gap-2 transition transform hover:-translate-y-1">
+                                <span>📂 FACULTY DATA</span>
+                            </button>
+                            <button onClick={handleSyncExcel} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center gap-2 transition transform hover:-translate-y-1">
+                                <span>🔄 Sync from Sheet</span>
+                            </button>
+                        </div>
 
                         <button onClick={() => router.push('/admin/faculty-requests')} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center gap-2 transition transform hover:-translate-y-1">
                             <span>🔄 Alternation Requests</span>
