@@ -253,6 +253,215 @@ class AdminFacultyListView(APIView):
              return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+class AdminFacultyListCreateView(APIView):
+    """
+    API for admin to list all faculty members or create a new one.
+    GET: List all faculty
+    POST: Create new faculty
+    """
+    def get(self, request):
+        faculty_list = Faculty.objects.all().order_by('department', 'name')
+        data = []
+        for f in faculty_list:
+            data.append({
+                'id': f.id,
+                'name': f.name,
+                'register_no': f.register_no,
+                'department': f.department,
+            })
+        return Response(data)
+
+    def post(self, request):
+        name = request.data.get('name')
+        register_no = request.data.get('register_no')
+        department = request.data.get('department')
+        password = request.data.get('password')
+
+        if not all([name, register_no, department, password]):
+            return Response({'error': 'All fields are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if Faculty.objects.filter(register_no=register_no).exists():
+            return Response({'error': 'Faculty with this Register No already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            faculty = Faculty(
+                name=name,
+                register_no=register_no,
+                department=department
+            )
+            faculty.set_password(password)
+            faculty.save()
+            
+            return Response({
+                'id': faculty.id,
+                'name': faculty.name,
+                'register_no': faculty.register_no,
+                'department': faculty.department
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminFacultyDetailView(APIView):
+    """
+    API for admin to retrieve, update or delete a specific faculty member.
+    """
+    def get_object(self, pk):
+        try:
+            return Faculty.objects.get(pk=pk)
+        except Faculty.DoesNotExist:
+            return None
+
+    def put(self, request, pk):
+        faculty = self.get_object(pk)
+        if not faculty:
+            return Response({'error': 'Faculty not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        name = request.data.get('name')
+        register_no = request.data.get('register_no')
+        department = request.data.get('department')
+        password = request.data.get('password') # Optional for update
+
+        if name: faculty.name = name
+        if register_no: 
+            # Check if new register_no conflicts with another faculty
+            if Faculty.objects.filter(register_no=register_no).exclude(pk=pk).exists():
+                return Response({'error': 'Register No already exists'}, status=status.HTTP_400_BAD_REQUEST)
+            faculty.register_no = register_no
+        if department: faculty.department = department
+        if password: faculty.set_password(password)
+
+        faculty.save()
+
+        return Response({
+            'id': faculty.id,
+            'name': faculty.name,
+            'register_no': faculty.register_no,
+            'department': faculty.department
+        })
+
+    def delete(self, request, pk):
+        faculty = self.get_object(pk)
+        if not faculty:
+            return Response({'error': 'Faculty not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        faculty.delete()
+        return Response({'message': 'Faculty deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
+
+
+
+
+class OpenFacultyExcelView(APIView):
+    """
+    API that returns the Google Sheet URL. 
+    """
+    def post(self, request):
+        sheet_url = "https://docs.google.com/spreadsheets/d/1gRWbJIgVEuOg6nJgNIVNDmrrSwNS_-i5yfYZWw42gnE/edit?usp=sharing"
+        return Response({'url': sheet_url, 'message': 'Opening Google Sheet...'}, status=status.HTTP_200_OK)
+
+
+class SyncFacultyExcelView(APIView):
+    """
+    API to sync changes from Google Sheet (All Sheets) back to the database.
+    """
+    def post(self, request):
+        try:
+            import pandas as pd
+            import requests
+            import io
+            
+            # Google Sheets XLSX Export URL (fetches all sheets)
+            xlsx_url = "https://docs.google.com/spreadsheets/d/1gRWbJIgVEuOg6nJgNIVNDmrrSwNS_-i5yfYZWw42gnE/export?format=xlsx"
+            
+            print(f"Fetching data from: {xlsx_url}")
+            
+            response = requests.get(xlsx_url)
+            response.raise_for_status()
+            
+            # Read all sheets
+            excel_file = io.BytesIO(response.content)
+            all_sheets = pd.read_excel(excel_file, sheet_name=None)
+            
+            frames = []
+            for sheet_name, df in all_sheets.items():
+                # Standardize columns for this sheet
+                df.columns = [str(c).strip() for c in df.columns]
+                frames.append(df)
+            
+            if not frames:
+                 return Response({'error': 'No sheets found in the Google Excel file.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Combine all sheets
+            df = pd.concat(frames, ignore_index=True)
+            
+            # Standardize names (again, for safety after concat)
+            df.columns = [str(c).strip() for c in df.columns]
+            
+            # Map Google Sheet Columns to Model Fields
+            # Found: ['S.NO', 'EMP CODE', 'NAME', 'GENDER', 'DEPT', 'DESIGNATION', 'DOJ', 'MOBILE NUMBER', 'KITE MAIL ID']
+            
+            required_cols = ['EMP CODE', 'NAME', 'DEPT']
+            
+            # Check if columns exist
+            missing = [c for c in required_cols if c not in df.columns]
+            if missing:
+                 return Response({'error': f'Google Sheet missing columns: {missing}'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            created_count = 0
+            updated_count = 0
+            
+            excel_reg_nos = []
+            
+            for index, row in df.iterrows():
+                # Map columns
+                reg_no = str(row['EMP CODE']).strip()
+                name = str(row['NAME']).strip()
+                dept = str(row['DEPT']).strip()
+                
+                if not reg_no or pd.isna(row['EMP CODE']) or reg_no.lower() == 'nan':
+                    continue
+                
+                # Handling integer conversion/cleanup for IDs if needed
+                if reg_no.endswith('.0'):
+                    reg_no = reg_no[:-2]
+                    
+                excel_reg_nos.append(reg_no)
+                
+                faculty, created = Faculty.objects.get_or_create(register_no=reg_no)
+                
+                if created:
+                    faculty.name = name
+                    faculty.department = dept
+                    faculty.set_password(reg_no)
+                    faculty.save()
+                    created_count += 1
+                else:
+                    if faculty.name != name or faculty.department != dept:
+                        faculty.name = name
+                        faculty.department = dept
+                        faculty.save()
+                        updated_count += 1
+            
+            # Sync deletes
+            faculties_to_delete = Faculty.objects.exclude(register_no__in=excel_reg_nos)
+            deleted_count = faculties_to_delete.count()
+            faculties_to_delete.delete()
+            
+            return Response({
+                'message': 'Sync successful',
+                'stats': {
+                    'created': created_count,
+                    'updated': updated_count,
+                    'deleted': deleted_count
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({'error': f"Failed to sync from Google Sheet: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 # ============ FACULTY SUBMODULE APIS ============
 
 class FacultyDashboardView(APIView):
