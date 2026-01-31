@@ -13,15 +13,17 @@ gunicorn==22.0.0
 # Static Files
 whitenoise==6.8.2
 
-# Utilities
-python-dotenv==1.2.1
+# Data Processing & Excel
 openpyxl==3.1.5
 pandas==2.1.4
 numpy==1.26.4
-PyPDF2==3.0.1
-requests==2.32.5
 xlrd>=2.0.1
 xlsxwriter>=3.0.0
+
+# Utilities
+python-dotenv==1.2.1
+PyPDF2==3.0.1
+requests==2.32.5
 
 # Google Sheets Integration
 gspread==6.0.0
