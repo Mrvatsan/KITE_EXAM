@@ -202,7 +202,8 @@ export const openFacultyExcel = async () => {
 };
 
 /**
- * Syncs the Faculty.xlsx file content back to the database.
+ * Syncs Faculty Data from the Google Sheet (Cloud) to the Database.
+ * This fetches the CSV export from the configured Google Sheet URL.
  */
 export const syncFacultyExcel = async () => {
   return api.post('/api/faculty/admin/sync-excel/');
