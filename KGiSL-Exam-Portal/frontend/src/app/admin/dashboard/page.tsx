@@ -4,6 +4,9 @@ import { useRouter } from 'next/navigation';
 import { uploadDataset, getDatasets, toggleDataset, deleteStudents, openFacultyExcel, syncFacultyExcel } from '../../api';
 import { motion } from 'framer-motion';
 
+// AdminDashboard Component
+// Allows administrators to manage hall seating, allocations, and faculty data.
+// Features Google Sheet integration for opening and syncing faculty records.
 export default function AdminDashboard() {
     const [datasets, setDatasets] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
