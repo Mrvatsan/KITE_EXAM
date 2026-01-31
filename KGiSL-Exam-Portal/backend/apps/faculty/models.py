@@ -8,9 +8,9 @@ class Faculty(models.Model):
     Stores authentication credentials and departmental affiliation.
     Passwords are hashed using Django's password hashing utilities.
     """
-    name = models.CharField(max_length=100)
-    register_no = models.CharField(max_length=50, unique=True)
-    department = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, help_text="Full name of the faculty member")
+    register_no = models.CharField(max_length=50, unique=True, help_text="Unique employee code or register number")
+    department = models.CharField(max_length=100, help_text="Department (e.g., CSE, ECE)")
     password = models.CharField(max_length=128)  # Hashed password
 
     def set_password(self, raw_password):
