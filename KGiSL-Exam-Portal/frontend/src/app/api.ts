@@ -194,7 +194,8 @@ export const approveAlternationRequest = async (request_id: number, action: stri
 };
 
 /**
- * Opens the Faculty.xlsx file on the server.
+ * Opens the Faculty Master Data.
+ * Returns the Google Sheet URL which the frontend should open in a new tab.
  */
 export const openFacultyExcel = async () => {
   return api.post('/api/faculty/admin/open-excel/');
