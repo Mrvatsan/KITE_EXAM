@@ -36,12 +36,12 @@ class FacultyAllocation(models.Model):
     Manages replacement logic via `is_replaced` and `replaced_by` fields.
     Enforces uniqueness: one faculty can only have one assignment per date-session.
     """
-    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='allocations')
-    hall_no = models.CharField(max_length=50)
+    faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='allocations', help_text="Assigned faculty member")
+    hall_no = models.CharField(max_length=50, help_text="Exam Hall Number")
     course_code = models.CharField(max_length=100)
     course_title = models.CharField(max_length=300)
-    exam_date = models.DateField()
-    session = models.CharField(max_length=20)
+    exam_date = models.DateField(help_text="Date of the exam session")
+    session = models.CharField(max_length=20, help_text="AN or FN session")
     is_replaced = models.BooleanField(default=False)
     is_confirmed = models.BooleanField(default=False)
     replaced_by = models.ForeignKey(
