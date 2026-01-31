@@ -353,9 +353,14 @@ class AdminFacultyDetailView(APIView):
 
 
 
+
 class OpenFacultyExcelView(APIView):
     """
-    API that returns the Google Sheet URL. 
+    API that returns the Google Sheet URL.
+    
+    This view returns the public URL of the shared Google Sheet used for 
+    Faculty Data management. The frontend uses this to open the sheet 
+    in a new tab for the administrator.
     """
     def post(self, request):
         sheet_url = "https://docs.google.com/spreadsheets/d/1gRWbJIgVEuOg6nJgNIVNDmrrSwNS_-i5yfYZWw42gnE/edit?usp=sharing"
@@ -365,6 +370,13 @@ class OpenFacultyExcelView(APIView):
 class SyncFacultyExcelView(APIView):
     """
     API to sync changes from Google Sheet (All Sheets) back to the database.
+    
+    Workflow:
+    1. Fetches the Google Sheet as an XLSX file.
+    2. Reads ALL sheets (tabs) in the workbook.
+    3. Combines them into a single DataFrame.
+    4. Maps 'EMP CODE' -> register_no, 'NAME' -> name, 'DEPT' -> department.
+    5. Performs Upsert (Create/Update) and Delete operations.
     """
     def post(self, request):
         try:
