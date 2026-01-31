@@ -19,6 +19,10 @@ from django.urls import path, include
 from django.shortcuts import redirect
 
 def home(request):
+    """
+    Redirect root URL to Admin Dashboard (Frontend).
+    This improves user experience by avoiding the backend 404/root page.
+    """
     return redirect('http://localhost:3000/admin/dashboard')
 
 urlpatterns = [
