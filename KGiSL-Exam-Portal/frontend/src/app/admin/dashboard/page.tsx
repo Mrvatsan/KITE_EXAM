@@ -137,21 +137,34 @@ export default function AdminDashboard() {
                 >
                     <h2 className="text-2xl font-bold text-gray-800 mb-8">Admin Controls</h2>
 
+                    <AnimatePresence>
+                        {statusMsg && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className={`mb-6 p-4 rounded-xl text-sm font-bold border-2 ${statusMsg.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-amber-50 border-amber-200 text-amber-700'
+                                    }`}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <span>{statusMsg.text}</span>
+                                    <button onClick={() => setStatusMsg(null)} className="ml-2 hover:opacity-50">✕</button>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
                     {/* Status Indicator */}
                     <div className="bg-gray-50 rounded-lg p-4 mb-8 flex items-center justify-between border border-gray-200">
                         <span className="text-gray-600 font-semibold">Dataset Status:</span>
                         <div className="flex items-center gap-2">
-                            {latestDataset?.is_active ? (
-                                <span className="text-green-600 font-bold">ACTIVE ✓</span>
-                            ) : (
-                                <span className="text-red-500 font-bold">INACTIVE X</span>
-                            )}
+                            {/* Status text removed as requested */}
                             {latestDataset && (
                                 <button
                                     onClick={() => handleToggle(latestDataset.id)}
                                     className={`px-4 py-1 rounded text-white text-sm font-bold transition ${latestDataset.is_active ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600 shadow-md'}`}
                                 >
-                                    Toggle
+                                    {latestDataset.is_active ? 'Inactive' : 'Active'}
                                 </button>
                             )}
                         </div>
