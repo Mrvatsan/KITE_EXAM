@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { uploadDataset, getDatasets, toggleDataset, deleteStudents, openFacultyExcel, syncFacultyExcel } from '../../api';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // AdminDashboard Component
 // Allows administrators to manage hall seating, allocations, and faculty data.
@@ -11,6 +11,7 @@ export default function AdminDashboard() {
     const [datasets, setDatasets] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState('');
+    const [statusMsg, setStatusMsg] = useState<{ text: string, type: 'success' | 'warning' } | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -35,6 +36,7 @@ export default function AdminDashboard() {
             await uploadDataset(file);
             setMsg('');
             alert('Hall seating is uploaded');
+            setStatusMsg(null); // Clear any old toggle messages
             fetchDatasets();
         } catch (err: any) {
             setMsg('');
@@ -45,7 +47,12 @@ export default function AdminDashboard() {
     };
 
     const handleToggle = async (id: number) => {
-        await toggleDataset(id);
+        const res = await toggleDataset(id);
+        if (res.data.is_active) {
+            setStatusMsg({ text: 'the students hall seating are live, they can view the hall seating', type: 'success' });
+        } else {
+            setStatusMsg({ text: 'the student hall seating is in inactive, students cant view the hall seating', type: 'warning' });
+        }
         fetchDatasets();
     };
 
