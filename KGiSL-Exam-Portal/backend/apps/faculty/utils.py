@@ -53,6 +53,8 @@ def get_faculty_sheet_data(department):
     sheet_name_map = {
         'AI&ML': 'AIML',
         'AI&DS': 'AIDS',
+        'ARTIFICIAL INTELLIGENCE & DATA SCIENCE': 'AIDS',
+        'ARTIFICIAL INTELLIGENCE AND DATA SCIENCE': 'AIDS',
         'CSE': 'CSE',
         'ECE': 'ECE',
         'MECH': 'MECH',
