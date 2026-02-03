@@ -446,7 +446,7 @@ class SyncFacultyExcelView(APIView):
                 if created:
                     faculty.name = name
                     faculty.department = dept
-                    faculty.set_password(reg_no)
+                    faculty.set_password('Kite@123')
                     faculty.save()
                     created_count += 1
                 else:
