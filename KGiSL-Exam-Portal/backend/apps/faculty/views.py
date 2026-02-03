@@ -448,6 +448,7 @@ class SyncFacultyExcelView(APIView):
                     faculty.department = dept
                     faculty.set_password('Kite@123')
                     faculty.save()
+                    print(f"Created faculty: {name} ({reg_no})")
                     created_count += 1
                 else:
                     if faculty.name != name or faculty.department != dept:
