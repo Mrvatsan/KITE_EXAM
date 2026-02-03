@@ -50,6 +50,8 @@ def get_faculty_sheet_data(department):
         raise FileNotFoundError(f"Faculty dataset not found at {FACULTY_DATASET_PATH}")
     
     # Map canonical department name to sheet name if they differ
+    # Map canonical department name to sheet name if they differ
+    # This dictionary handles variations in department names found in the Excel dataset
     sheet_name_map = {
         'AI&ML': 'AIML',
         'AI&DS': 'AIDS',
