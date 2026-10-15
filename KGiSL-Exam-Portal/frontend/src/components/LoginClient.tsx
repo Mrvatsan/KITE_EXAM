@@ -1,0 +1,123 @@
+"use client";
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { loginAdmin, loginStudent, loginFaculty } from '../app/api';
+import { useRouter } from 'next/navigation';
+
+export default function LoginClient() {
+    const [role, setRole] = useState('student'); // 'student', 'admin', or 'faculty'
+    const [identifier, setIdentifier] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const router = useRouter();
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+
+        try {
+            let res;
+            if (role === 'admin') {
+                res = await loginAdmin(identifier, password);
+                localStorage.setItem('role', 'admin');
+                localStorage.setItem('username', res.data.username);
+                router.push('/admin/dashboard');
+            } else if (role === 'faculty') {
+                res = await loginFaculty(identifier, password);
+                localStorage.setItem('role', 'faculty');
+                localStorage.setItem('facultyToken', res.data.token);
+                localStorage.setItem('facultyData', JSON.stringify(res.data));
+                router.push('/faculty/dashboard');
+            } else {
+                res = await loginStudent(identifier, password);
+                localStorage.setItem('role', 'student');
+                localStorage.setItem('studentData', JSON.stringify(res.data));
+                router.push('/student');
+            }
+        } catch (err: any) {
+            setError(err.response?.data?.error || 'Login failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-200 relative">
+            <div className="absolute inset-0 bg-cover bg-center z-0" style={{ backgroundImage: 'url("/bg.jpg")' }}></div>
+            <div className="absolute inset-0 bg-black opacity-30 z-0"></div>
+
+            <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass-effect p-8 rounded-2xl shadow-2xl w-full max-w-md z-10 relative bg-white/30 backdrop-blur-xl border border-white/40"
+            >
+                <div className="text-center mb-6">
+                    <h1 className="text-3xl font-bold text-indigo-900 drop-shadow-sm">KGiSL Exam Portal</h1>
+                </div>
+
+                <div className="flex bg-white/50 p-1 rounded-full mb-8 w-fit mx-auto shadow-inner">
+                    <button
+                        onClick={() => setRole('student')}
+                        className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${role === 'student' ? 'bg-white text-indigo-900 shadow-md' : 'text-gray-700 hover:text-indigo-800'}`}
+                    >
+                        Student
+                    </button>
+                    <button
+                        onClick={() => setRole('faculty')}
+                        className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${role === 'faculty' ? 'bg-white text-indigo-900 shadow-md' : 'text-gray-700 hover:text-indigo-800'}`}
+                    >
+                        Faculty
+                    </button>
+                    <button
+                        onClick={() => setRole('admin')}
+                        className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${role === 'admin' ? 'bg-white text-indigo-900 shadow-md' : 'text-gray-700 hover:text-indigo-800'}`}
+                    >
+                        Admin
+                    </button>
+                </div>
+
+                <div className="text-center mb-6">
+                    <h2 className="text-white text-lg font-medium tracking-wide">
+                        {role === 'student' ? 'Student Login' : role === 'faculty' ? 'Faculty Login' : 'Admin Login'}
+                    </h2>
+                </div>
+
+                <form onSubmit={handleLogin} className="space-y-5">
+                    <div>
+                        <input
+                            type="text"
+                            value={identifier}
+                            onChange={(e) => setIdentifier(e.target.value)}
+                            className="w-full px-5 py-3 rounded-lg border-0 bg-white/80 placeholder-gray-500 text-gray-900 focus:ring-2 focus:ring-indigo-300 focus:bg-white transition-all shadow-sm"
+                            placeholder={role === 'admin' ? 'Username' : role === 'faculty' ? 'Faculty ID / Staff Code' : 'Register Number'}
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full px-5 py-3 rounded-lg border-0 bg-white/80 placeholder-gray-500 text-gray-900 focus:ring-2 focus:ring-indigo-300 focus:bg-white transition-all shadow-sm"
+                            placeholder="Password"
+                            required
+                        />
+                    </div>
+
+                    {error && <div className="text-red-100 bg-red-500/50 p-2 rounded text-center text-sm font-bold">{error}</div>}
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full py-3 rounded-lg bg-white text-indigo-900 font-bold text-lg shadow-lg hover:bg-gray-50 hover:shadow-xl transition-all transform hover:-translate-y-1"
+                    >
+                        {loading ? 'Processing...' : 'Login'}
+                    </button>
+                </form>
+            </motion.div>
+        </div>
+    );
+}

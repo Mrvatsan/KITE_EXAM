@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+let rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+if (rawApiUrl && !rawApiUrl.startsWith('http://') && !rawApiUrl.startsWith('https://')) {
+  rawApiUrl = `https://${rawApiUrl}`;
+}
+const API_URL = rawApiUrl.replace(/\/$/, '');
 
 const api = axios.create({
   baseURL: API_URL,
@@ -82,13 +86,17 @@ export const getFacultyDashboard = async (token: string) => {
 };
 
 /**
- * Gets student list for a specific hall and session.
+ * Gets student list for a specific hall, session, and optional date.
  * @param token Auth token
  * @param hall_no Hall number
  * @param session Session (FN/AN)
+ * @param date Exam date (YYYY-MM-DD)
  */
-export const getFacultyStudents = async (token: string, hall_no: string, session: string) => {
-  return api.get(`/api/faculty/students/?hall_no=${hall_no}&session=${session}`, {
+export const getFacultyStudents = async (token: string, hall_no: string, session: string, date?: string) => {
+  const url = date
+    ? `/api/faculty/students/?hall_no=${encodeURIComponent(hall_no)}&session=${encodeURIComponent(session)}&date=${encodeURIComponent(date)}`
+    : `/api/faculty/students/?hall_no=${encodeURIComponent(hall_no)}&session=${encodeURIComponent(session)}`;
+  return api.get(url, {
     headers: { 'Authorization': `Token ${token}` }
   });
 };
@@ -134,6 +142,22 @@ export const allocateFaculty = async (dept_counts: any, date: string, session: s
  */
 export const confirmFacultyAllocation = async (date: string, session: string) => {
   return api.post('/api/faculty/admin/confirm/', { date, session });
+};
+
+/**
+ * Resets and unlocks the allocation for a date/session.
+ * @param date Exam date
+ * @param session Exam session
+ */
+export const resetFacultyAllocation = async (date: string, session: string) => {
+  return api.post('/api/faculty/admin/reset/', { date, session });
+};
+
+/**
+ * Gets available exam dates and sessions from the active dataset.
+ */
+export const getAvailableDates = async () => {
+  return api.get('/api/available-dates/');
 };
 
 /**

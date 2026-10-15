@@ -97,7 +97,7 @@ export default function FacultyHistory() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={5} className="px-8 py-12 text-center text-gray-400 font-medium italic">
+                                    <td colSpan={6} className="px-8 py-12 text-center text-gray-400 font-medium italic">
                                         No history found. Your duty records will appear here after your first assignment.
                                     </td>
                                 </tr>

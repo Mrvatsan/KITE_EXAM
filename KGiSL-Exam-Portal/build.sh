@@ -2,14 +2,12 @@
 # exit on error
 set -o errexit
 
-# Navigate to backend directory
-cd backend
+if [ -d "backend" ]; then
+  cd backend
+fi
 
-# Install Python dependencies
+pip install --upgrade pip
 pip install -r requirements.txt
-
-# Run database migrations
-python manage.py migrate
-
-# Collect static files
+python manage.py migrate --no-input
 python manage.py collectstatic --no-input
+python create_superuser.py

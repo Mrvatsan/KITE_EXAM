@@ -7,7 +7,26 @@ from django.utils import timezone
 from apps.exams.utils import normalize_department_name
 
 
-FACULTY_DATASET_PATH = r"D:\AFS\FACULTY_DATASET(MODIFIED).xlsx"
+from django.conf import settings
+
+def get_faculty_dataset_path():
+    """
+    Dynamically resolves the path to FACULTYMODIFIED.xlsx across local dev and production.
+    """
+    env_path = os.environ.get('FACULTY_DATASET_PATH')
+    if env_path and os.path.exists(env_path):
+        return env_path
+        
+    candidates = [
+        os.path.join(settings.BASE_DIR, 'FACULTYMODIFIED.xlsx'),
+        os.path.join(settings.BASE_DIR, '..', 'FACULTYMODIFIED.xlsx'),
+        os.path.join(settings.BASE_DIR, 'datasets', 'FACULTYMODIFIED.xlsx'),
+        r"D:\AFS\FACULTY_DATASET(MODIFIED).xlsx",
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return os.path.join(settings.BASE_DIR, 'FACULTYMODIFIED.xlsx')
 
 def normalize_designation(designation):
     """
@@ -46,69 +65,125 @@ def get_faculty_sheet_data(department):
     """
     Reads faculty data from the Excel sheet corresponding to the department.
     """
-    if not os.path.exists(FACULTY_DATASET_PATH):
-        raise FileNotFoundError(f"Faculty dataset not found at {FACULTY_DATASET_PATH}")
+    dataset_path = get_faculty_dataset_path()
+    if not os.path.exists(dataset_path):
+        raise FileNotFoundError(f"Faculty dataset not found at {dataset_path}")
     
     # Map canonical department name to sheet name if they differ
-    # Map canonical department name to sheet name if they differ
-    # This dictionary handles variations in department names found in the Excel dataset
     sheet_name_map = {
         'AI&ML': 'AIML',
+        'AIML': 'AIML',
+        'ARTIFICIAL INTELLIGENCE & MACHINE LEARNING': 'AIML',
+        'ARTIFICIAL INTELLIGENCE AND MACHINE LEARNING': 'AIML',
+        'BE CSE (ARTIFICIAL INTELLEGENCE & MACHINE LEARNING)': 'AIML',
+        'BE CSE (ARTIFICIAL INTELLIGENCE & MACHINE LEARNING)': 'AIML',
         'AI&DS': 'AIDS',
+        'AIDS': 'AIDS',
         'ARTIFICIAL INTELLIGENCE & DATA SCIENCE': 'AIDS',
         'ARTIFICIAL INTELLIGENCE AND DATA SCIENCE': 'AIDS',
         'CSE': 'CSE',
         'COMPUTER SCIENCE AND ENGINEERING': 'CSE',
+        'COMPUTER SCIENCE ENGINEERING': 'CSE',
         'ECE': 'ECE',
         'ELECTRONICS AND COMMUNICATION ENGINEERING': 'ECE',
         'ELECTRONICS AND COMMUNICATION ENG': 'ECE',
         'MECH': 'MECH',
         'MECHANICAL ENGINEERING': 'MECH',
         'CYS': 'CYS',
+        'BE CSE CYS': 'CYS',
+        'BE CSE CYS': 'CYS',
+        'CYBER SECURITY': 'CYS',
         'CSBS': 'CSBS',
+        'COMPUTER SCIENCE & BUSINESS SYSTEMS': 'CSBS',
+        'COMPUTER SCIENCE AND BUSINESS SYSTEMS': 'CSBS',
         'MBA': 'MBA',
         'MASTER OF BUSINESS ADMINISTRATION': 'MBA',
+        'BUSINESS MANAGEMENT': 'MBA',
+        'MANAGEMENT STUDIES': 'MBA',
         'IT': 'IT',
+        'B.TECH IT': 'IT',
+        'INFORMATION TECHNOLOGY': 'IT',
         'S&H': 'S&H',
+        'S & H': 'S&H',
         'SCIENCE & HUMANITIES': 'S&H',
         'SCIENCE & HUMANITIES (PHYSICS)': 'S&H',
         'SCIENCE & HUMANITIES (CHEMISTRY)': 'S&H',
         'SCIENCE & HUMANITIES (MATHS)': 'S&H',
         'SCIENCE & HUMANITIES (ENGLISH)': 'S&H',
-        'BE CSE CYS': 'CYS', # Handle specific variant
-        'B.TECH IT': 'IT',
-        'INFORMATION TECHNOLOGY': 'IT',
+        'SCIENCE & HUMANITIES (TAMIL)': 'S&H',
     }
     
-    # Try the canonical name first, then the mapped name
     try:
-        xl = pd.ExcelFile(FACULTY_DATASET_PATH)
-        # Normalize input department for lookup
+        xl = pd.ExcelFile(dataset_path)
         dept_key = str(department).strip().upper()
-        sheet_name = sheet_name_map.get(dept_key, department)
-        
+
+        try:
+            canonical = normalize_department_name(dept_key) or dept_key
+        except Exception:
+            canonical = dept_key
+
+        sheet_name = sheet_name_map.get(dept_key) or sheet_name_map.get(canonical) or canonical
+
+        # Keyword-based semantic mapping fallback if exact name not in sheets
         if sheet_name not in xl.sheet_names:
-            # Robust fallback: check if any Excel sheet name is contained within the department string
-            # OR if the department string contains any Excel sheet name
-            # e.g., "BE CSE CyS" contains "CYS"
+            clean_dept = dept_key.replace(' ', '').replace('&', '').replace('.', '')
+            
+            if 'HUMANITIES' in dept_key or 'SCIENCE' in dept_key or 'S&H' in dept_key or 'S&H' in clean_dept:
+                sheet_name = 'S&H'
+            elif 'BUSINESSSYSTEMS' in clean_dept or 'CSBS' in clean_dept:
+                sheet_name = 'CSBS'
+            elif 'BUSINESS' in dept_key or 'MBA' in dept_key or 'MANAGEMENT' in dept_key:
+                sheet_name = 'MBA'
+            elif 'CYBER' in dept_key or 'CYS' in clean_dept:
+                sheet_name = 'CYS'
+            elif 'MACHINE' in dept_key or 'AIML' in clean_dept:
+                sheet_name = 'AIML'
+            elif 'DATASCIENCE' in clean_dept or 'AIDS' in clean_dept:
+                sheet_name = 'AIDS'
+            elif 'MECHANICAL' in dept_key or 'MECH' in clean_dept:
+                sheet_name = 'MECH'
+            elif 'COMMUNICATION' in dept_key or 'ELECTRONICS' in dept_key or 'ECE' in clean_dept:
+                sheet_name = 'ECE'
+            elif 'COMPUTER' in dept_key or 'CSE' in clean_dept:
+                sheet_name = 'CSE'
+            elif 'IT' in clean_dept or 'INFORMATIONTECHNOLOGY' in clean_dept:
+                sheet_name = 'IT'
+
+        if sheet_name not in xl.sheet_names:
             clean_dept = dept_key.replace(' ', '').replace('&', '')
+
             for s in xl.sheet_names:
-                clean_s = s.upper().replace(' ', '').replace('&', '')
-                if clean_s in clean_dept or clean_dept in clean_s:
+                try:
+                    s_canonical = normalize_department_name(s.upper())
+                except Exception:
+                    s_canonical = None
+                if s_canonical and s_canonical == canonical:
                     sheet_name = s
                     break
-            
+
             if sheet_name not in xl.sheet_names:
-                # Fallback for IT if it's not present
-                if department == 'IT' and 'IT' not in xl.sheet_names:
-                     potential = [s for s in xl.sheet_names if 'IT' in s]
-                     if potential:
-                         sheet_name = potential[0]
-                
-                if sheet_name not in xl.sheet_names:
-                    raise ValueError(f"Sheet for department '{department}' not found in Excel. Available: {', '.join(xl.sheet_names)}")
+                for s in xl.sheet_names:
+                    clean_s = s.upper().replace(' ', '').replace('&', '')
+                    if clean_s in clean_dept or clean_dept in clean_s:
+                        sheet_name = s
+                        break
+
+            if sheet_name not in xl.sheet_names:
+                for s in xl.sheet_names:
+                    if canonical and canonical in s.upper():
+                        sheet_name = s
+                        break
+
+            if sheet_name not in xl.sheet_names:
+                if canonical == 'IT':
+                    potential = [s for s in xl.sheet_names if 'IT' in s.upper()]
+                    if potential:
+                        sheet_name = potential[0]
+
+            if sheet_name not in xl.sheet_names:
+                raise ValueError(f"Sheet for department '{department}' not found in Excel. Available: {', '.join(xl.sheet_names)}")
         
-        df = pd.read_excel(FACULTY_DATASET_PATH, sheet_name=sheet_name)
+        df = pd.read_excel(dataset_path, sheet_name=sheet_name)
         
         # Standardize columns
         df.columns = df.columns.astype(str).str.upper().str.strip()
@@ -420,7 +495,8 @@ def replace_faculty(allocation_id, reason, update_rotation=False):
                 course_code=allocation.course_code,
                 course_title=allocation.course_title,
                 exam_date=allocation.exam_date,
-                session=allocation.session
+                session=allocation.session,
+                is_confirmed=allocation.is_confirmed
             )
             
     raise ValueError(f"No available replacement found in department {dept_name} for this session.")
@@ -501,3 +577,16 @@ def approve_alternation(request_id, admin_user):
     request_obj.save()
     
     return new_allocation
+
+
+@transaction.atomic
+def reset_faculty_allocation(date, session):
+    """
+    Resets/unlocks faculty allocations for a specific date and session.
+    Clears preview or confirmed allocations and unlocks the status so the admin can re-allocate.
+    """
+    from .models import FacultyAllocationStatus
+    deleted_count, _ = FacultyAllocation.objects.filter(exam_date=date, session=session).delete()
+    FacultyAllocationStatus.objects.filter(exam_date=date, session=session).delete()
+    return deleted_count
+

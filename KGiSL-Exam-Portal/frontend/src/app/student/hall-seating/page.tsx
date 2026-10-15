@@ -24,27 +24,27 @@ export default function HallSeatingPage() {
     // Helper function to determine block from hall number
     const getBlockFromHallNo = (hallNo: string): string => {
         const hallNum = parseInt(hallNo);
-        if (isNaN(hallNum)) return 'Unknown';
+        if (isNaN(hallNum)) return 'Academic Block';
 
-        // 3-digit numbers (100-999) = Academic Block
-        // 4+ digit numbers (1000+) = Innovation Block
-        if (hallNum >= 100 && hallNum <= 999) {
+        // 1 to 999 = Academic Block
+        // 1000+ = Innovation Block
+        if (hallNum >= 1 && hallNum <= 999) {
             return 'Academic Block';
         } else if (hallNum >= 1000) {
             return 'Innovation Block (IT Tower)';
         }
 
-        return 'Unknown';
+        return 'Academic Block';
     };
 
     // Helper function to determine floor from hall number based on block
     const getFloorFromHallNo = (hallNo: string, block: string): string => {
         const hallNum = parseInt(hallNo);
-        if (isNaN(hallNum)) return 'Unknown';
+        if (isNaN(hallNum)) return 'Ground Floor';
 
         if (block === 'Academic Block') {
-            // Use hundreds series for Academic Block
-            if (hallNum >= 100 && hallNum <= 199) return 'Ground Floor';
+            // Use 1-199 for Ground Floor, 200s for First Floor, etc.
+            if (hallNum >= 1 && hallNum <= 199) return 'Ground Floor';
             if (hallNum >= 200 && hallNum <= 299) return 'First Floor';
             if (hallNum >= 300 && hallNum <= 399) return 'Second Floor';
             if (hallNum >= 400 && hallNum <= 499) return 'Third Floor';

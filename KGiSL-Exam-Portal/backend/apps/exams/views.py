@@ -122,6 +122,27 @@ class DatasetUploadView(APIView):
                 # Clean hall and seat numbers (remove .0 from Excel decimal numbers)
                 hall_no = str(row.get('hall_no', '')).strip()
                 seat_no = str(row.get('seat_no', '')).strip()
+
+                # Normalize register_no robustly (handle numeric values and trailing .0)
+                raw_reg = row.get('register_no', '')
+                reg_no = ''
+                try:
+                    if pd.isna(raw_reg):
+                        reg_no = ''
+                    elif isinstance(raw_reg, (int,)):
+                        reg_no = str(raw_reg)
+                    elif isinstance(raw_reg, float):
+                        # Convert float like 2024001.0 -> 2024001
+                        if raw_reg.is_integer():
+                            reg_no = str(int(raw_reg))
+                        else:
+                            reg_no = str(raw_reg)
+                    else:
+                        reg_no = str(raw_reg).strip()
+                        if reg_no.endswith('.0') and reg_no.replace('.0','').isdigit():
+                            reg_no = reg_no[:-2]
+                except Exception:
+                    reg_no = str(raw_reg).strip()
                 
                 try:
                     if '.' in hall_no:
@@ -134,16 +155,24 @@ class DatasetUploadView(APIView):
                 except:
                     pass
 
+                # Use mapped password if present
+                pwd = None
+                if 'password' in df.columns:
+                    pval = row.get('password')
+                    if pd.notna(pval):
+                        pwd = str(pval).strip()
+
                 students_to_create.append(Student(
                     dataset=dataset,
-                    register_no=str(row.get('register_no', '')),
+                    register_no=reg_no,
                     name=str(row.get('name', '')),
                     course_code=str(row.get('course_code', '')),
                     course_title=str(row.get('course_title', '')),
-                    exam_date=parsed_date, 
+                    exam_date=parsed_date,
                     session=str(row.get('session', '')),
                     hall_no=hall_no,
-                    seat_no=seat_no
+                    seat_no=seat_no,
+                    password=pwd if pwd else 'Kite@12345'
                 ))
             
             Student.objects.bulk_create(students_to_create)
@@ -242,10 +271,7 @@ class HallTicketView(APIView):
         
         # Identify department from register number
         department = get_department_from_register_no(register_no)
-        
-        if not department:
-            return Response({'error': 'Invalid register number format or unknown department'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # Get student details from active dataset
         try:
             active_dataset = Dataset.objects.filter(is_active=True).first()
@@ -255,6 +281,19 @@ class HallTicketView(APIView):
             student = Student.objects.get(register_no=register_no, dataset=active_dataset)
         except Student.DoesNotExist:
             return Response({'error': 'Student not found in active dataset'}, status=status.HTTP_404_NOT_FOUND)
+
+        # If department couldn't be inferred from register number, try to infer
+        # from the student's course_code by matching existing HallTicketExam records.
+        if not department:
+            try:
+                exam_match = HallTicketExam.objects.filter(course_code__icontains=student.course_code).first()
+                if exam_match:
+                    department = exam_match.department
+            except Exception:
+                department = None
+
+        if not department:
+            return Response({'error': 'Invalid register number format or unknown department. Consider using department-coded register numbers or ensure hall-ticket data contains matching course codes.'}, status=status.HTTP_400_BAD_REQUEST)
         
         # Get all exam data for this department, grouped by semester
         exams = HallTicketExam.objects.filter(department=department).order_by('semester', 'exam_date', 'session')
@@ -303,12 +342,14 @@ class AvailableExamDatesView(APIView):
                 'message': 'No dataset found. Please upload a seating plan first.'
             }, status=status.HTTP_200_OK)
         
-        # Get all unique date-session combinations
-        dates_sessions = Student.objects.filter(dataset=active_dataset)\
+        # Get all unique date-session combinations (ignoring null dates)
+        dates_sessions = Student.objects.filter(dataset=active_dataset, exam_date__isnull=False)\
             .values('exam_date', 'session').distinct().order_by('exam_date', 'session')
         
         available_dates = []
         for ds in dates_sessions:
+            if not ds.get('exam_date'):
+                continue
             hall_count = Student.objects.filter(
                 dataset=active_dataset,
                 exam_date=ds['exam_date'],

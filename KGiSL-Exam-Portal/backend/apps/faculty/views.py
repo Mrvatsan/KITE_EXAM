@@ -169,6 +169,32 @@ class AdminFacultyConfirmView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class AdminFacultyResetAllocationView(APIView):
+    """
+    API for admin to unlock/reset faculty allocations for a specific date and session.
+    """
+    def post(self, request):
+        date_str = request.data.get('date')
+        session = request.data.get('session')
+        
+        if not date_str or not session:
+            return Response({'error': 'Date and session required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            from datetime import datetime
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+            
+            from .utils import reset_faculty_allocation
+            count = reset_faculty_allocation(date_obj, session)
+            
+            return Response({
+                'message': f'Allocation for {date_str} ({session}) has been reset and unlocked.',
+                'deleted_count': count
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class AdminFacultyStatusView(APIView):
     """
     API for admin to toggle faculty visibility and check status.
@@ -246,7 +272,9 @@ class AdminFacultyListView(APIView):
                     'department': alloc.faculty.department,
                     'course_code': alloc.course_code,
                     'course_title': alloc.course_title,
-                    'is_replaced': alloc.is_replaced
+                    'is_confirmed': alloc.is_confirmed,
+                    'is_replaced': alloc.is_replaced,
+                    'replaced_by': alloc.replaced_by.name if alloc.replaced_by else None
                 })
             return Response(data)
         except Exception as e:
@@ -566,6 +594,7 @@ class FacultyStudentSeatingView(APIView):
         token_key = request.headers.get('Authorization')
         hall_no = request.query_params.get('hall_no')
         session = request.query_params.get('session')
+        date_str = request.query_params.get('date')
         
         if not token_key:
             return Response(
@@ -587,8 +616,16 @@ class FacultyStudentSeatingView(APIView):
                 assignment_query = assignment_query.filter(hall_no=hall_no)
             if session:
                 assignment_query = assignment_query.filter(session=session)
+            if date_str:
+                try:
+                    from datetime import datetime
+                    target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    assignment_query = assignment_query.filter(exam_date=target_date)
+                except Exception:
+                    pass
             
-            assignment = assignment_query.first()
+            # Order by latest exam date first so current allocations take precedence
+            assignment = assignment_query.order_by('-exam_date').first()
             if not assignment:
                 return Response(
                     {'error': 'No assignment found for this hall/session today.'}, 
@@ -603,6 +640,8 @@ class FacultyStudentSeatingView(APIView):
             
             from apps.exams.models import Student, Dataset
             active_dataset = Dataset.objects.filter(is_active=True).first()
+            if not active_dataset:
+                active_dataset = Dataset.objects.order_by('-uploaded_at').first()
             students = Student.objects.filter(
                 dataset=active_dataset,
                 exam_date=assignment.exam_date,

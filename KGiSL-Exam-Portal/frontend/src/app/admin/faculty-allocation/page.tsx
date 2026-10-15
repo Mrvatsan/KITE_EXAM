@@ -1,12 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { allocateFaculty, getAllocatedFaculty, confirmFacultyAllocation, getFacultyStatus, toggleFacultyActive } from '../../api';
+import { allocateFaculty, getAllocatedFaculty, confirmFacultyAllocation, getFacultyStatus, toggleFacultyActive, resetFacultyAllocation, getAvailableDates } from '../../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
 export default function AdminFacultyAllocation() {
     const [counts, setCounts] = useState<any>({
-        'CSE': 0, 'AI&ML': 0, 'AI&DS': 0, 'ECE': 0, 'CYS': 0, 'MECH': 0, 'CSBS': 0, 'S&H': 0
+        'CSE': 0, 'AI&ML': 0, 'AI&DS': 0, 'ECE': 0, 'CYS': 0, 'MECH': 0, 'CSBS': 0, 'MBA': 0, 'S&H': 0
     });
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [session, setSession] = useState('FN');
@@ -19,13 +19,24 @@ export default function AdminFacultyAllocation() {
     const [isConfirmed, setIsConfirmed] = useState(false);
     const [hasExistingAllocation, setHasExistingAllocation] = useState(false);
     const [isFacultyActive, setIsFacultyActive] = useState(false);
+    const [availableDates, setAvailableDates] = useState<any[]>([]);
     const router = useRouter();
 
     useEffect(() => {
         const role = localStorage.getItem('role');
         if (role !== 'admin') router.push('/');
         checkStatus();
+        fetchAvailableDates();
     }, [date, session]);
+
+    const fetchAvailableDates = async () => {
+        try {
+            const res = await getAvailableDates();
+            setAvailableDates(res.data.available_dates || []);
+        } catch (err) {
+            console.error("Failed to load available dates", err);
+        }
+    };
 
 
 
@@ -73,9 +84,29 @@ export default function AdminFacultyAllocation() {
         try {
             await confirmFacultyAllocation(date, session);
             setIsConfirmed(true);
+            setHasExistingAllocation(true);
             alert('Allocation confirmed and locked.');
+            checkStatus();
         } catch (err: any) {
             alert(err.response?.data?.error || 'Confirmation failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleReset = async () => {
+        if (!confirm(`Are you sure you want to unlock/reset allocations for ${date} (${session})? This will allow re-allocating faculty.`)) return;
+        setLoading(true);
+        try {
+            await resetFacultyAllocation(date, session);
+            setIsConfirmed(false);
+            setHasExistingAllocation(false);
+            setIsFacultyActive(false);
+            setResults([]);
+            alert(`Allocations for ${date} (${session}) have been reset and unlocked.`);
+            checkStatus();
+        } catch (err: any) {
+            alert(err.response?.data?.error || 'Reset failed');
         } finally {
             setLoading(false);
         }
@@ -152,6 +183,35 @@ export default function AdminFacultyAllocation() {
                                             ))}
                                         </select>
                                     </div>
+                                    {/* Available Dates Badges */}
+                                    {availableDates.length > 0 && (
+                                        <div className="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100">
+                                            <p className="text-[10px] font-bold text-indigo-700 uppercase tracking-widest mb-2">Available in Active Dataset</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {availableDates.map((ad, idx) => {
+                                                    const isSelected = date === ad.date && session === ad.session;
+                                                    return (
+                                                        <button
+                                                            key={idx}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setDate(ad.date);
+                                                                setSession(ad.session);
+                                                            }}
+                                                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                                                isSelected
+                                                                    ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-300'
+                                                                    : 'bg-white text-indigo-900 hover:bg-indigo-100 border border-indigo-200'
+                                                            }`}
+                                                        >
+                                                            {ad.date} ({ad.session}) • {ad.halls} {ad.halls === 1 ? 'Hall' : 'Halls'}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Date</label>
@@ -232,6 +292,17 @@ export default function AdminFacultyAllocation() {
                                             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all active:scale-95"
                                         >
                                             ✓ Confirm Allocation
+                                        </button>
+                                    )}
+
+                                    {isConfirmed && hasExistingAllocation && (
+                                        <button
+                                            type="button"
+                                            onClick={handleReset}
+                                            disabled={loading}
+                                            className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl shadow-md transition-all active:scale-95 text-xs flex items-center justify-center gap-1.5"
+                                        >
+                                            <span>🔓 Unlock & Reset Allocation</span>
                                         </button>
                                     )}
 

@@ -39,6 +39,8 @@ backend/datasets/queryoutput_*.xls
 *.log
 local_settings.py
 media/
+staticfiles/
+backend/staticfiles/
 celerybeat-schedule
 
 # Node

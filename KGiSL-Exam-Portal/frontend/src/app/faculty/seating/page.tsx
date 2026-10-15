@@ -24,7 +24,7 @@ export default function FacultySeating() {
             if (res.data.length > 0) {
                 const first = res.data[0];
                 setSelectedAssignment(first);
-                fetchStudents(token, first.hall_no, first.session);
+                fetchStudents(token, first.hall_no, first.session, first.exam_date);
             } else {
                 setLoading(false);
             }
@@ -34,10 +34,10 @@ export default function FacultySeating() {
         }
     };
 
-    const fetchStudents = async (token: string, hall: string, session: string) => {
+    const fetchStudents = async (token: string, hall: string, session: string, date?: string) => {
         try {
             setLoading(true);
-            const res = await getFacultyStudents(token, hall, session);
+            const res = await getFacultyStudents(token, hall, session, date);
             setStudents(res.data.students || []);
         } catch (err) {
             setError('Failed to fetch student list');
@@ -50,7 +50,7 @@ export default function FacultySeating() {
         const token = localStorage.getItem('facultyToken');
         const selected = assignments[idx];
         setSelectedAssignment(selected);
-        if (token) fetchStudents(token, selected.hall_no, selected.session);
+        if (token) fetchStudents(token, selected.hall_no, selected.session, selected.exam_date);
     };
 
     if (loading && assignments.length === 0) return (

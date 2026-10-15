@@ -153,6 +153,9 @@ def clean_and_parse_excel(file_obj):
         # Date - handle 'examdate', 'exam_date', 'date'
         elif 'examdate' in col or (col == 'date'):
             normalization_map[col] = 'exam_date'
+        # Password - handle 'password', 'pass'
+        elif 'pass' in col:
+            normalization_map[col] = 'password'
 
     # Apply mapping
     df = df.rename(columns=normalization_map)
@@ -213,6 +216,10 @@ def normalize_department_name(dept_name):
         'RA': 'R&A',
         'CSBS': 'CSBS',
         'CYS': 'CYS',
+        # Additional long-form mappings
+        'COMPUTERSCIENCEENGINEERING': 'CSE',
+        'COMPUTERSCIENCEANDENGINEERING': 'CSE',
+        'COMPUTERSCIENCE': 'CSE',
     }
     
     # Check if base form matches
@@ -403,27 +410,27 @@ def get_block_from_hall_no(hall_no):
     except (ValueError, AttributeError, TypeError):
         return 'Unknown'
     
-    if 100 <= hall_num <= 999:
+    if 1 <= hall_num <= 999:
         return 'Academic Block'
     elif 1000 <= hall_num <= 5999:
         return 'Innovation Block'
     
-    return 'Unknown'
+    return 'Academic Block'
 
 
 def resolve_hall_location(hall_no):
     """
-    Returns combined "Floor – Block" string.
+    Returns combined "Floor - Block" string.
     """
     block = get_block_from_hall_no(hall_no)
-    if block == 'Unknown':
-        return 'Unknown'
-        
     floor = get_floor_from_hall_no(hall_no, block=block)
+    
+    if block == 'Unknown' and floor == 'Unknown':
+        return f"Hall {hall_no}"
     if floor == 'Unknown':
-        return 'Unknown'
+        return f"{block}"
         
-    return f"{floor} – {block}"
+    return f"{floor} - {block}"
 
 
 def get_floor_from_hall_no(hall_no, block=None):
@@ -431,7 +438,7 @@ def get_floor_from_hall_no(hall_no, block=None):
     Determine floor from hall number based on block.
     
     Rules:
-    - Academic Block: Uses hundreds series (100-199 = Ground, 200-299 = First, etc.)
+    - Academic Block: Uses hundreds series (1-199 = Ground, 200-299 = First, etc.)
     - Innovation Block: Uses thousands series (1000-1999 = First, 2000-2999 = Second, etc.)
     
     Args:
@@ -445,15 +452,15 @@ def get_floor_from_hall_no(hall_no, block=None):
         # Handle cases like "201.0" or "1001.0" coming from Excel exports
         hall_num = int(float(str(hall_no).strip()))
     except (ValueError, AttributeError, TypeError):
-        return 'Unknown'
+        return 'Ground Floor'
     
     # Compute block if not provided
     if block is None:
         block = get_block_from_hall_no(hall_no)
     
     if block == 'Academic Block':
-        # Hundreds series for Academic Block
-        if 100 <= hall_num <= 199:
+        # Single, two-digit, and hundreds series for Academic Block
+        if 1 <= hall_num <= 199:
             return 'Ground Floor'
         elif 200 <= hall_num <= 299:
             return 'First Floor'
