@@ -63,11 +63,16 @@ If you prefer to set up services manually in the Render dashboard:
    | `DATABASE_URL` | *Paste your Internal Database URL from Step 1* |
    | `SECRET_KEY` | *Generate a secure random string or click Generate* |
    | `ALLOWED_HOSTS` | `.onrender.com` |
-   | `DJANGO_SUPERUSER_USERNAME` | `admin` |
-   | `DJANGO_SUPERUSER_PASSWORD` | *Your desired admin password* |
+   | `DJANGO_SUPERUSER_USERNAME` | `Kgkite` |
+   | `DJANGO_SUPERUSER_PASSWORD` | `Kgkite@123` |
 5. Set **Health Check Path** (under Advanced): `/health/`
 6. Click **"Create Web Service"**.
 7. Once deployed, copy your backend URL (e.g., `https://exam-portal-backend.onrender.com`).
+
+> **Admin Login Credentials**:
+> - **Username**: `Kgkite` (or `admin`)
+> - **Password**: `Kgkite@123` (or `admin123`)
+> - **Role**: `Admin`
 
 ---
 

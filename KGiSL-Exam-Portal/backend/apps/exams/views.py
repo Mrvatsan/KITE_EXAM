@@ -18,8 +18,15 @@ class LoginView(APIView):
         role = request.data.get('role', 'student') # 'student' or 'admin'
 
         if role == 'admin':
-            user = authenticate(username=username, password=password)
-            if user and user.is_superuser:
+            clean_username = (username or '').strip()
+            clean_password = (password or '').strip()
+            user = authenticate(username=clean_username, password=clean_password)
+            if not user and clean_username:
+                existing_user = User.objects.filter(username__iexact=clean_username).first()
+                if existing_user:
+                    user = authenticate(username=existing_user.username, password=clean_password)
+
+            if user and (user.is_superuser or user.is_staff):
                 return Response({'token': 'admin-dummy-token', 'role': 'admin', 'username': user.username}, status=status.HTTP_200_OK)
             return Response({'error': 'Invalid Admin Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         

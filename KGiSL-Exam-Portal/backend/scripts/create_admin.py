@@ -3,8 +3,14 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 django.setup()
 from django.contrib.auth.models import User
-if not User.objects.filter(username='Kgkite').exists():
+user = User.objects.filter(username__iexact='Kgkite').first()
+if not user:
     User.objects.create_superuser('Kgkite', 'admin@example.com', 'Kgkite@123')
     print("Superuser 'Kgkite' created.")
 else:
-    print("Superuser 'Kgkite' already exists.")
+    user.set_password('Kgkite@123')
+    user.is_superuser = True
+    user.is_staff = True
+    user.is_active = True
+    user.save()
+    print("Superuser 'Kgkite' password and permissions updated.")
