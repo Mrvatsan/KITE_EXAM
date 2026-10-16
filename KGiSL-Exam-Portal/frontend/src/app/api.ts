@@ -1,13 +1,50 @@
 import axios from 'axios';
 
-let rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-if (rawApiUrl && !rawApiUrl.startsWith('http://') && !rawApiUrl.startsWith('https://')) {
-  rawApiUrl = `https://${rawApiUrl}`;
-}
-const API_URL = rawApiUrl.replace(/\/$/, '');
+/**
+ * Dynamically resolves the active Backend API base URL.
+ * Handles local dev, Render production (*.onrender.com), private hostnames, and user overrides.
+ */
+export const getBaseApiUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('API_URL');
+    if (saved && saved.trim()) {
+      return saved.trim().replace(/\/$/, '');
+    }
+
+    const hostname = window.location.hostname;
+    if (hostname.endsWith('.onrender.com')) {
+      const envUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      if (!envUrl || envUrl.includes('localhost') || !envUrl.includes('.')) {
+        if (envUrl && !envUrl.includes('localhost')) {
+          const cleanHost = envUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+          return `https://${cleanHost}.onrender.com`;
+        }
+        if (hostname.includes('frontend')) {
+          return `https://${hostname.replace('frontend', 'backend')}`;
+        }
+        return 'https://exam-portal-backend.onrender.com';
+      }
+    }
+  }
+
+  let rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  if (rawApiUrl && !rawApiUrl.startsWith('http://') && !rawApiUrl.startsWith('https://')) {
+    if (!rawApiUrl.includes('.') && !rawApiUrl.includes('localhost')) {
+      rawApiUrl = `https://${rawApiUrl}.onrender.com`;
+    } else {
+      rawApiUrl = `https://${rawApiUrl}`;
+    }
+  }
+  return rawApiUrl.replace(/\/$/, '');
+};
 
 const api = axios.create({
-  baseURL: API_URL,
+  timeout: 60000,
+});
+
+api.interceptors.request.use((config) => {
+  config.baseURL = getBaseApiUrl();
+  return config;
 });
 
 /**

@@ -1,7 +1,7 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { loginAdmin, loginStudent, loginFaculty } from '../app/api';
+import { loginAdmin, loginStudent, loginFaculty, getBaseApiUrl } from '../app/api';
 import { useRouter } from 'next/navigation';
 
 export default function LoginClient() {
@@ -10,7 +10,21 @@ export default function LoginClient() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showConfig, setShowConfig] = useState(false);
+    const [backendUrl, setBackendUrl] = useState('');
     const router = useRouter();
+
+    useEffect(() => {
+        setBackendUrl(getBaseApiUrl());
+    }, []);
+
+    const saveBackendUrl = () => {
+        if (backendUrl.trim()) {
+            localStorage.setItem('API_URL', backendUrl.trim());
+            setError('');
+            setShowConfig(false);
+        }
+    };
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -37,7 +51,18 @@ export default function LoginClient() {
                 router.push('/student');
             }
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Login failed');
+            console.error('Login error:', err);
+            if (err.response?.data?.error) {
+                setError(err.response.data.error);
+            } else if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+                setError('Backend is waking up (Render free tier takes ~50s on cold start). Please wait 10 seconds and click Login again.');
+            } else if (!err.response) {
+                const currentApi = getBaseApiUrl();
+                setError(`Cannot reach Backend API at (${currentApi}). If your backend is waking up on Render or has a custom URL, you can check settings below.`);
+                setShowConfig(true);
+            } else {
+                setError(err.message || 'Login failed');
+            }
         } finally {
             setLoading(false);
         }
@@ -59,19 +84,19 @@ export default function LoginClient() {
 
                 <div className="flex bg-white/50 p-1 rounded-full mb-8 w-fit mx-auto shadow-inner">
                     <button
-                        onClick={() => setRole('student')}
+                        onClick={() => { setRole('student'); setError(''); }}
                         className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${role === 'student' ? 'bg-white text-indigo-900 shadow-md' : 'text-gray-700 hover:text-indigo-800'}`}
                     >
                         Student
                     </button>
                     <button
-                        onClick={() => setRole('faculty')}
+                        onClick={() => { setRole('faculty'); setError(''); }}
                         className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${role === 'faculty' ? 'bg-white text-indigo-900 shadow-md' : 'text-gray-700 hover:text-indigo-800'}`}
                     >
                         Faculty
                     </button>
                     <button
-                        onClick={() => setRole('admin')}
+                        onClick={() => { setRole('admin'); setError(''); }}
                         className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${role === 'admin' ? 'bg-white text-indigo-900 shadow-md' : 'text-gray-700 hover:text-indigo-800'}`}
                     >
                         Admin
@@ -107,15 +132,64 @@ export default function LoginClient() {
                         />
                     </div>
 
-                    {error && <div className="text-red-100 bg-red-500/50 p-2 rounded text-center text-sm font-bold">{error}</div>}
+                    {error && (
+                        <div className="text-red-100 bg-red-600/80 p-3 rounded-lg text-center text-xs font-semibold leading-relaxed shadow">
+                            {error}
+                        </div>
+                    )}
 
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-3 rounded-lg bg-white text-indigo-900 font-bold text-lg shadow-lg hover:bg-gray-50 hover:shadow-xl transition-all transform hover:-translate-y-1"
+                        className="w-full py-3 rounded-lg bg-white text-indigo-900 font-bold text-lg shadow-lg hover:bg-gray-50 hover:shadow-xl transition-all transform hover:-translate-y-1 disabled:opacity-75"
                     >
-                        {loading ? 'Processing...' : 'Login'}
+                        {loading ? 'Connecting to Backend...' : 'Login'}
                     </button>
+
+                    <div className="text-center pt-1">
+                        <button
+                            type="button"
+                            onClick={() => setShowConfig(!showConfig)}
+                            className="text-xs text-white/80 hover:text-white underline"
+                        >
+                            {showConfig ? 'Hide API URL Settings' : '⚙️ Backend Server Settings'}
+                        </button>
+                    </div>
+
+                    {showConfig && (
+                        <div className="bg-black/40 p-3 rounded-lg space-y-2 text-left border border-white/20">
+                            <label className="text-xs text-white font-medium block">
+                                Backend API URL:
+                            </label>
+                            <input
+                                type="text"
+                                value={backendUrl}
+                                onChange={(e) => setBackendUrl(e.target.value)}
+                                placeholder="https://exam-portal-backend.onrender.com"
+                                className="w-full px-3 py-1.5 rounded text-xs bg-white text-gray-900 border"
+                            />
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={saveBackendUrl}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1 rounded font-bold"
+                                >
+                                    Save & Apply
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        localStorage.removeItem('API_URL');
+                                        setBackendUrl(getBaseApiUrl());
+                                        setError('');
+                                    }}
+                                    className="bg-gray-600 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded"
+                                >
+                                    Reset Default
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </form>
             </motion.div>
         </div>

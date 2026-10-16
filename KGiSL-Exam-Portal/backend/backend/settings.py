@@ -30,12 +30,14 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 raw_allowed_hosts = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [h.strip() for h in raw_allowed_hosts.split(',') if h.strip()]
 
-# Automatically support Render deployment domains
+# Automatically support Render deployment domains and cloud environments
 render_external_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if render_external_hostname and render_external_hostname not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(render_external_hostname)
 if '.onrender.com' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('.onrender.com')
+if '*' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('*')
 
 
 # Application definition
@@ -169,16 +171,19 @@ STORAGES = {
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings - Update with your frontend URL on Render
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
 raw_cors = os.environ.get(
     'CORS_ALLOWED_ORIGINS',
     'http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001'
 )
 CORS_ALLOWED_ORIGINS = [c.strip() for c in raw_cors.split(',') if c.strip()]
-CORS_ALLOW_CREDENTIALS = True
 
 # Automatically allow requests from all Render frontend subdomains and local dev ports
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https:\/\/.*\.onrender\.com$",
+    r"^https:\/\/.*\.vercel\.app$",
     r"^http:\/\/localhost:\d+$",
     r"^http:\/\/127\.0\.0\.1:\d+$",
 ]
@@ -195,8 +200,9 @@ if render_external_hostname:
     if render_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(render_origin)
 
-if 'https://*.onrender.com' not in CSRF_TRUSTED_ORIGINS:
-    CSRF_TRUSTED_ORIGINS.append('https://*.onrender.com')
+for trusted in ['https://*.onrender.com', 'https://*.vercel.app']:
+    if trusted not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(trusted)
 
 # Security settings for production
 if not DEBUG:
